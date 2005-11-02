@@ -1,0 +1,8 @@
+load.php pour charger la tables locations.sql, ou phpmyadmin .... (Attention au timeout !)
+
+JPEG.php
+med_utm_31_t.jpg
+wz_tooltip.js
+
+formatter/wakka.php
+actions/mapview.php
