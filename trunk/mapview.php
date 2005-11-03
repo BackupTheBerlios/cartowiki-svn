@@ -1,8 +1,8 @@
 <?php
 /*
-mapview.php 
+mapview.php
 
-Copyright 2005 David Delon, some piece of code are borrowed from "carto" by 
+Copyright 2005 David Delon, some piece of code are borrowed from "carto" by
 Yann le Guennec 2005, a project under "Licence Art Libre".
 
 This program is free software; you can redistribute it and/or modify
@@ -34,9 +34,9 @@ OK.
 TODO : Documenter l'inclusion des parametres à la photo, et proposer
 les deux options
 TODO : 30T
-~~ Commune (departement) [commentaire] ~~ 
+~~ Commune (departement) [commentaire] ~~
 Couplage DATE ? voir : http://www.festival-nature.net/index.php
-TODO : zoom sur département ... 
+TODO : zoom sur département ...
 TODO : test centrage
 */
 
@@ -93,7 +93,7 @@ $Px_echelle_X1['31T'] = $X131T;
 $Px_echelle_Y1['31T']=$Y131T;
 
 
-// Pour calcul Resolution  
+// Pour calcul Resolution
 
 // X Coin inferieur droit en Pixel
 //$Px_echelle_X2['31T']=805;
@@ -149,7 +149,7 @@ $M_UTM_X1['32T']=$X132TUTM;
 //$M_UTM_Y1['32T']=4540000;
 $M_UTM_Y1['32T']=$Y132TUTM;
 
-// angle 
+// angle
 //$a=356.0; // (-4 degre)
 
 //$angle3132;
@@ -184,7 +184,7 @@ $M_UTM_X1['30T']=$X130TUTM;
 //$M_UTM_Y1['30T']=4540000;
 $M_UTM_Y1['30T']=$Y130TUTM;
 
-// angle 
+// angle
 //$a=356.0; // (-4 degre)
 //$angle3031;
 
@@ -198,12 +198,12 @@ unset($_SESSION['location']);
 
 if (!$this->GetParameter("destmap")) {
 	$dest_map = $this->getPageTag().".png";
-} 
+}
 else {
 	$dest_map = $this->GetParameter("destmap");
 }
 
-			
+
 $img = imagecreatefromjpeg($src_map);
 
 switch ($couleur) {
@@ -227,7 +227,7 @@ switch ($couleur) {
 echo "<a name=\"topmap\"></a>";
 
 // Lecture des localités :
-// Ordre de recherche  
+// Ordre de recherche
 // 1 : Correspondance exacte : localite + departement
 // 2 : Correspondance exacte : localite
 // 3 : Correspondance approchée : localite sans le departement si présent
@@ -259,96 +259,96 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 			$utm=$this->LoadSingle("select * from locations where name = '".mysql_escape_string($name)."' limit 1");
 		}
 		if (!$utm) {
-			// On a rien trouvé : nouvelles tentatives 
+			// On a rien trouvé : nouvelles tentatives
 			// Ville seule
 			$utm=$this->LoadSingle("select * from locations where name = '".mysql_escape_string($name)."' limit 1");
-			
+
 			// On enregistre cette tentative  ...
-			
+
 			// Toujours rien ?
 			// Ville soundex
 			if (!$utm) {
 				$utm=$this->LoadSingle("select * from locations where soundex(name) = soundex('".mysql_escape_string($name)."') limit 1");
-				 // On a trouvé quoi avec le soundex  ? 
+				 // On a trouvé quoi avec le soundex  ?
 				if ($utm) {
 					$_SESSION['location'] [$i]='AF';
 					$_SESSION['location_message'] [$i]=$utm['name'].' '.$utm['code'];
 				}
 			}
 			else {
-				// On a trouvé quoi sans le département ?  
+				// On a trouvé quoi sans le département ?
 				$_SESSION['location'] [$i]='AF';
 				$_SESSION['location_message'] [$i]=$utm['name'].' '.$utm['code'];
 			}
 		}
-		
+
 		// C'est trouvé !
-		
+
 		if ($utm) {
-			
+
 			// On centre le point au milieu de la maille 10x10 par defaut ...
-			
+
 			$pad = str_repeat ("0" ,(7 - strlen( $utm['x_utm'])));
 			$utm['x_utm'] = $pad.$utm['x_utm'];
-			
+
 			$pad = str_repeat ("0" ,(7 - strlen( $utm['y_utm'])));
 			$utm['y_utm'] = $pad.$utm['y_utm'];
-			
+
 			$utm['x_utm']=substr($utm['x_utm'] ,0,3);
 			$utm['x_utm'] =$utm['x_utm']."5000";
-			
+
 			$utm['y_utm']=substr($utm['y_utm'] ,0,3);
 			$utm['y_utm'] =$utm['y_utm']."5000";
-			
-			
-			// Fuseau 31 T 
+
+
+			// Fuseau 31 T
 			if ($utm['sector']=='31T') {
 				$x=(($utm['x_utm'] - $M_UTM_X1['31T']) * $p['31T'] ) + $Px_echelle_X1['31T'];
 				$y=$Px_echelle_Y2['31T']-(($utm['y_utm'] - $M_UTM_Y1['31T']) * $p['31T'] );
 			}
 			else {
-				
+
 				// Fuseau 32 T : une rotation + translation est appliquée
 				if ($utm['sector']=='32T') {
 					$cosa = cos(deg2rad($angle3132));
 					$sina = sin(deg2rad($angle3132));
-				
+
 					$xp = (($utm['x_utm'] - $M_UTM_X1['32T']) * $cosa) + (($utm['y_utm']- $M_UTM_Y1['32T']) * $sina);
 					$yp = (-($utm['x_utm'] - $M_UTM_X1['32T'])* $sina) + (($utm['y_utm'] - $M_UTM_Y1['32T'])* $cosa);
 					$x=($xp * $p['32T'] ) + $Px_echelle_X1['32T'];
 					$Px_echelle_Y2['32T'];
 					$y=$Px_echelle_Y2['32T']-($yp * $p['32T'] );
-					
+
 				}
-				
-				else { 
+
+				else {
 					// Fuseau 30 T : une rotation + translation est appliquée
 					if ($utm['sector']=='30T') {
-						
+
 						$cosa = cos(deg2rad($angle3031));
 						$sina = sin(deg2rad($angle3031));
-					
+
 						$xp = (($utm['x_utm'] - $M_UTM_X1['30T']) * $cosa) + (($utm['y_utm']- $M_UTM_Y1['30T']) * $sina);
 						$yp = (-($utm['x_utm'] - $M_UTM_X1['30T'])* $sina) + (($utm['y_utm'] - $M_UTM_Y1['30T'])* $cosa);
 						$x=($xp * $p['30T'] ) + $Px_echelle_X1['30T'];
 						$Px_echelle_Y2['30T'];
 						$y=$Px_echelle_Y2['30T']-($yp * $p['30T'] );
-						
+
 					}
-				}				
+				}
 			}
-			
-			
+
+
 
 			$x=round($x);
 			$y=round($y);
-			
+
 			$name=$utm['name'];
-			
-			// On stocke les commentaires pour affichage dans les tooltips 
-			
+
+			// On stocke les commentaires pour affichage dans les tooltips
+
 			$link=" <a href=\"#MAP_".$i."\">".$name.$comment."</a>";
-			
+
 			// Commentaire deja présent ? : on ajoute à la suite
 			if ($text[$x.'|'.$y]) {
 				$link=
@@ -358,18 +358,18 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 			else {
 				$text[$x.'|'.$y]=$link;
 			}
-			
+
 		}
 		// Pas trouvé : on stocke l'occurence pour transmission au formateur qui affichera le message d'erreur.
-		
+
 		else {
 			$_SESSION['location'] [$i]='NF';
 		}
 		$i++;
 	}
-	
-	// Generation maparea + tooltips 
-	
+
+	// Generation maparea + tooltips
+
 	foreach ($text as $coord => $maptext ) {
 		list($x,$y)=explode("|",$coord);
 		//imagearc($img, $x, $y, 10, 10, 0, 360, $green);
@@ -378,23 +378,23 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 		// pas de double quote dans le texte
 		$maptext=preg_replace("/'/", "\'", $maptext);
 		$maptext=preg_replace("/\"/", "\\'", $maptext);
-		
-	
+
+
 		$usemap=$usemap."<area shape=\"circle\" alt=\"\" coords=\"".$x.",".$y.",5\" onmouseover=\"this.T_BGCOLOR='#E6FFFB';this.T_OFFSETX=2;this.T_OFFSETY=2;this.T_STICKY=1;return escape('".$maptext."')\" href=\"#\"/>";
-		
+
 	}
-	
+
 	imagepng($img, $dest_map);
-	
+
 	imagedestroy($img);
-	
+
 	echo "<img src=\"$dest_map\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
 	echo "<map name=\"themap\" id=\"themap\">";
 	echo $usemap;
 	echo "</map>";
-	
 
-		
+
+
 	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"wz_tooltip.js\"></script>";
 
 }
