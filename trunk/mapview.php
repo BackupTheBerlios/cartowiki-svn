@@ -21,40 +21,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
 
-/*
-*
-* @param map
-*/
+// ~~ Commune (departement) [commentaire] ~~
 
 /*
-TODO : Cache (on ne reconstruit pas la carte si < 15 minutes, parametrable pour les nouveautes ... par exemple) ? Ou alors, fabriquer la carte lors de la sauvegarde uniquement, ce qui serait plus judicieux mais impliquerait de modifier plus en profondeur Wikini
-TODO : Nom de l'image generée en fonction de la page appellant l'action
+
 TODO : parametre a externaliser (et à enfouir dans les commentaires de la photo ...)
-OK.
-TODO : Documenter l'inclusion des parametres à la photo, et proposer
-les deux options
-TODO : 30T
-~~ Commune (departement) [commentaire] ~~
-Couplage DATE ? voir : http://www.festival-nature.net/index.php
+TODO : revoir la notation des parametres
+TODO : Documenter l'inclusion des parametres dans l'image , et proposer les deux options
+TODO : chantier optimisation :
+	cherchez toutes les villes dans une meme requete ...
 TODO : zoom sur département ...
 TODO : test centrage
+TODO : parametre de desactivation du cache
+TODO : revoir la notation des commentaires
 */
 
-/* TODO : chantier optimisation :
- * cherchez toutes les villes dans une meme requete et les afficher ensuite ... ? : en tout cas pour
- * les cas normaux (un peu difficile)
 
-/* Parameters */
-/* A externaliser */
-
-// Les parametres sont dans le commentaire Jpeg de l'image, utiliser le programme jhead pour les initialiser
-// Libraires de lecture des informations associées à l'image
-
-
-// Avant tout chose : test Cache du contenu de la page
 // Gestion du cache :
 // Cache de la dernière page uniquement, verrou de mise à jour pris en charge par Wikini
-// Prevoir le forcage : par exemple parametre supplementaire dans l'url et un bouton
+// Forcage rafraichissement par ajonction de &refersh=1 à la requête.
 //
 
 include('cartowiki.config.php');
@@ -71,12 +56,14 @@ if ($this->page['latest']=='Y') {
 	}
 }
 
+// Les parametres sont dans le commentaire Jpeg de l'image, utiliser le programme jhead pour les initialiser
+// Libraires de lecture des informations associées à l'image
 
 include ("JPEG.php");
 
+// Lecture Parametres de l'action :
 
-// nom de la carte (les coodonnees sont dans le champ commentaire ...
-// ou alors en parametre
+// nom de la carte
 
 $src_map = $this->GetParameter("srcmap");
 if (!$src_map) {
@@ -84,10 +71,9 @@ if (!$src_map) {
 	exit;
 }
 
-
 // Couleur par defaut : vert
 
-// Historique ...
+// Test valeurs de parametres historique pour compatibilité ascendante
 $couleur = $this->GetParameter("color");
 if (!$couleur) {
 	$couleur = $this->GetParameter("pointcolor");
@@ -100,15 +86,19 @@ if (!$point_size) {
 	$point_size=10;
 }
 
+// Fin lecture Parametre de l'action
+
 
 // Lecture commentaires embarqués dans la page
 
 $comment=get_jpeg_Comment(get_jpeg_header_data($src_map));
 
+// Solution facile de lecture, mais difficile à maintenir : notamment la notation
 parse_str($comment);
 
-// Fuseau 31T :
 
+
+// Fuseau 31T :
 // Rappel : Pixel : O,0 en haut gauche
 
 // X Coin inferieur gauche en Pixel
@@ -120,7 +110,6 @@ $Px_echelle_Y1['31T']=$Y131T;
 
 
 // Pour calcul Resolution
-
 // X Coin inferieur droit en Pixel
 //$Px_echelle_X2['31T']=805;
 $Px_echelle_X2['31T']=$X231T;
@@ -138,11 +127,12 @@ $M_UTM_Y1['31T']=$Y131TUTM;
 // Pour calcul "resolution"
 
 // X Coin inferieur droit en UTM
-//$M_UTM_X2['31T']=1053771; // A revoir
+//$M_UTM_X2['31T']=105371; //
 $M_UTM_X2['31T']=$X231TUTM;
 // Y Coin inferieur droit en UTM
 //$M_UTM_Y2['31T']=5042332;
 $M_UTM_Y2['31T']=$Y231TUTM;
+
 
 // "Resolution"
 $p['31T']=($Px_echelle_X2['31T'] - $Px_echelle_X1['31T']) / ($M_UTM_X2['31T'] - $M_UTM_X1['31T']);
@@ -167,16 +157,12 @@ $Px_echelle_X2['32T']=$X232T;
 $Px_echelle_Y2['32T']=$Y232T;
 
 
-
 // X Coin inferieur gauche en UTM
 //$M_UTM_X1['32T']=247615;
 $M_UTM_X1['32T']=$X132TUTM;
 // Y Coin inferieur gauche en UTM
 //$M_UTM_Y1['32T']=4540000;
 $M_UTM_Y1['32T']=$Y132TUTM;
-
-// angle
-//$a=356.0; // (-4 degre)
 
 //$angle3132;
 
@@ -185,8 +171,6 @@ $p['32T']=($Px_echelle_X2['31T'] - $Px_echelle_X1['31T'] ) / ($M_UTM_X2['31T'] -
 //
 
 // Fuseau 30T :
-
-// Pixel : O,0 en haut gauche
 
 // X Coin inferieur gauche en Pixel
 //$Px_echelle_X1['30T']=483;
@@ -218,8 +202,11 @@ $M_UTM_Y1['30T']=$Y130TUTM;
 $p['30T']=($Px_echelle_X2['31T'] - $Px_echelle_X1['31T'] ) / ($M_UTM_X2['31T'] - $M_UTM_X1['31T']);
 
 
+// Initialisation
+
 $usemap="";
 $ellipse="";
+
 unset($_SESSION['location']);
 
 $dest_map = $this->getPageTag().".jpg";
@@ -252,7 +239,7 @@ echo "<a name=\"topmap\"></a>";
 // 2 : Correspondance exacte : localite
 // 3 : Correspondance approchée : localite sans le departement si présent
 // 4 : Correspondance approchée : soundex sur la ville
-// 5 : (On pourrait faire un super soundex à la tela ici ...)
+// 5 : (On pourrait faire un super soundex  ici ...)
 
 
 if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
@@ -404,7 +391,7 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 	}
 
 	imageinterlace($img,1);
-	imagejpeg($img, $dest_map,95);
+	imagejpeg($img, $dest_map);
 
 	imagedestroy($img);
 
@@ -418,9 +405,12 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"wz_tooltip.js\"></script>";
 
 }
-// Afficher carte vide
-//else {
-//}
+
+// Affichage image origine
+else {
+	echo "<img src=\"$src_map\" style=\"border:none; cursor:crosshair\" alt=\"\"</img><br />\n";
+	echo "</map>";
+}
 
 // Fin gestion du cache
 
