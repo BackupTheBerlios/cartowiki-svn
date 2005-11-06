@@ -40,6 +40,10 @@ TODO : zoom sur département ...
 TODO : test centrage
 */
 
+/* TODO : chantier optimisation :
+ * cherchez toutes les villes dans une meme requete et les afficher ensuite ... ? : en tout cas pour
+ * les cas normaux (un peu difficile)
+
 /* Parameters */
 /* A externaliser */
 
@@ -197,7 +201,7 @@ $ellipse="";
 unset($_SESSION['location']);
 
 if (!$this->GetParameter("destmap")) {
-	$dest_map = $this->getPageTag().".png";
+	$dest_map = $this->getPageTag().".jpg";
 }
 else {
 	$dest_map = $this->GetParameter("destmap");
@@ -234,6 +238,18 @@ echo "<a name=\"topmap\"></a>";
 // 4 : Correspondance approchée : soundex sur la ville
 // 5 : (On pourrait faire un super soundex à la tela ici ...)
 
+// Gestion du cache :
+
+// Prevoir le forcage : par exemple parametre supplementaire dans l'url et un bouton
+// Il faut stocker la date de dernier calcul et la comparer avec la date de derniere modification.
+// La facon la plus simple de stocker la date de dernier calcul : le nom de l'image, l'inconvenient
+// il va falloir gérer des effacements des anciens ... : mais non c'est très simple !
+// DestMap+2005-11-05 00:19:33 et comparaison
+// A transformer : appel sur le dernier
+// LoadRevisions($page) { return $this->LoadAll("select * from ".$this->config["table_prefix"]."pages where tag = '".mysql_escape_string($page)."' order by time desc"); }
+
+
+
 if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 	$i=0;
 	foreach ($locations[1] as $location){
@@ -269,14 +285,14 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 			// Ville soundex
 			if (!$utm) {
 				$utm=$this->LoadSingle("select * from locations where soundex(name) = soundex('".mysql_escape_string($name)."') limit 1");
-				 // On a trouvé quoi avec le soundex  ?
+				 // On a trouvé quoi avec le soundex  ?  : on le stocke pour l'afficher
 				if ($utm) {
 					$_SESSION['location'] [$i]='AF';
 					$_SESSION['location_message'] [$i]=$utm['name'].' '.$utm['code'];
 				}
 			}
 			else {
-				// On a trouvé quoi sans le département ?
+				// On a trouvé quoi sans le département ? : on le stocke pour l'afficher
 				$_SESSION['location'] [$i]='AF';
 				$_SESSION['location_message'] [$i]=$utm['name'].' '.$utm['code'];
 			}
@@ -316,7 +332,6 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 					$xp = (($utm['x_utm'] - $M_UTM_X1['32T']) * $cosa) + (($utm['y_utm']- $M_UTM_Y1['32T']) * $sina);
 					$yp = (-($utm['x_utm'] - $M_UTM_X1['32T'])* $sina) + (($utm['y_utm'] - $M_UTM_Y1['32T'])* $cosa);
 					$x=($xp * $p['32T'] ) + $Px_echelle_X1['32T'];
-					$Px_echelle_Y2['32T'];
 					$y=$Px_echelle_Y2['32T']-($yp * $p['32T'] );
 
 				}
@@ -331,7 +346,6 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 						$xp = (($utm['x_utm'] - $M_UTM_X1['30T']) * $cosa) + (($utm['y_utm']- $M_UTM_Y1['30T']) * $sina);
 						$yp = (-($utm['x_utm'] - $M_UTM_X1['30T'])* $sina) + (($utm['y_utm'] - $M_UTM_Y1['30T'])* $cosa);
 						$x=($xp * $p['30T'] ) + $Px_echelle_X1['30T'];
-						$Px_echelle_Y2['30T'];
 						$y=$Px_echelle_Y2['30T']-($yp * $p['30T'] );
 
 					}
@@ -384,7 +398,8 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 
 	}
 
-	imagepng($img, $dest_map);
+	imageinterlace($img,1);
+	imagejpeg($img, $dest_map,95);
 
 	imagedestroy($img);
 
