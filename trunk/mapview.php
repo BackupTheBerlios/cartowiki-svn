@@ -34,12 +34,13 @@ TODO : zoom sur département ...
 TODO : test centrage
 TODO : parametre de desactivation du cache
 TODO : revoir la notation des commentaires
+TODO : centrage point sur la maille optionnel
 */
 
 
 // Gestion du cache :
 // Cache de la dernière page uniquement, verrou de mise à jour pris en charge par Wikini
-// Forcage rafraichissement par ajonction de &refersh=1 à la requête.
+// Forcage rafraichissement par adjonction de &refresh=1 à la requête.
 //
 
 include('cartowiki.config.php');
@@ -271,20 +272,18 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 			// Ville seule
 			$utm=$this->LoadSingle("select * from locations where name = '".mysql_escape_string($name)."' limit 1");
 
-			// On enregistre cette tentative  ...
-
 			// Toujours rien ?
 			// Ville soundex
 			if (!$utm) {
 				$utm=$this->LoadSingle("select * from locations where soundex(name) = soundex('".mysql_escape_string($name)."') limit 1");
-				 // On a trouvé quoi avec le soundex  ?  : on le stocke pour l'afficher
+				 //on stocke ce qu'on a trouver avec le  soundex    pour l'afficher
 				if ($utm) {
 					$_SESSION['location'] [$i]='AF';
 					$_SESSION['location_message'] [$i]=$utm['name'].' '.$utm['code'];
 				}
 			}
 			else {
-				// On a trouvé quoi sans le département ? : on le stocke pour l'afficher
+				// on stocke ce qu'on a trouver sans le departement pour l'afficher
 				$_SESSION['location'] [$i]='AF';
 				$_SESSION['location_message'] [$i]=$utm['name'].' '.$utm['code'];
 			}
