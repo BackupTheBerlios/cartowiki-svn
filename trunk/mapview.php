@@ -50,6 +50,28 @@ TODO : test centrage
 // Les parametres sont dans le commentaire Jpeg de l'image, utiliser le programme jhead pour les initialiser
 // Libraires de lecture des informations associées à l'image
 
+
+// Avant tout chose : test Cache du contenu de la page
+// Gestion du cache :
+// Cache de la dernière page uniquement, verrou de mise à jour pris en charge par Wikini
+// Prevoir le forcage : par exemple parametre supplementaire dans l'url et un bouton
+//
+
+include('cartowiki.config.php');
+
+if ($this->page['latest']=='Y') {
+	if (!isset($_REQUEST["refresh"]) || ($_REQUEST["refresh"]!=1)) {
+			$cachefile = $CartoWikiConfig['cache_path'].'/'.$this->getPageTag().$this->page['time'];
+			if (file_exists($cachefile) ) {
+		    	include($cachefile);
+	    		echo "<!-- Cached copy, generated ".date('H:i', filemtime($cachefile))." -->\n";
+	    		return;
+			}
+		ob_start(); //  Gestion du cache
+	}
+}
+
+
 include ("JPEG.php");
 
 
@@ -200,13 +222,7 @@ $usemap="";
 $ellipse="";
 unset($_SESSION['location']);
 
-if (!$this->GetParameter("destmap")) {
-	$dest_map = $this->getPageTag().".jpg";
-}
-else {
-	$dest_map = $this->GetParameter("destmap");
-}
-
+$dest_map = $this->getPageTag().".jpg";
 
 $img = imagecreatefromjpeg($src_map);
 
@@ -237,17 +253,6 @@ echo "<a name=\"topmap\"></a>";
 // 3 : Correspondance approchée : localite sans le departement si présent
 // 4 : Correspondance approchée : soundex sur la ville
 // 5 : (On pourrait faire un super soundex à la tela ici ...)
-
-// Gestion du cache :
-
-// Prevoir le forcage : par exemple parametre supplementaire dans l'url et un bouton
-// Il faut stocker la date de dernier calcul et la comparer avec la date de derniere modification.
-// La facon la plus simple de stocker la date de dernier calcul : le nom de l'image, l'inconvenient
-// il va falloir gérer des effacements des anciens ... : mais non c'est très simple !
-// DestMap+2005-11-05 00:19:33 et comparaison
-// A transformer : appel sur le dernier
-// LoadRevisions($page) { return $this->LoadAll("select * from ".$this->config["table_prefix"]."pages where tag = '".mysql_escape_string($page)."' order by time desc"); }
-
 
 
 if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
@@ -412,6 +417,25 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 
 	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"wz_tooltip.js\"></script>";
 
+}
+// Afficher carte vide
+//else {
+//}
+
+// Fin gestion du cache
+
+if ($this->page['latest']=='Y') {
+	if (!isset($_REQUEST["refresh"]) || ($_REQUEST["refresh"]!=1)) {
+		foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*') as $fn) {
+	    	   unlink($fn);
+		}
+		$fp = fopen($cachefile, 'w');
+		$mapview_output = ob_get_contents();
+		fwrite($fp, $mapview_output);
+		fclose($fp);
+		ob_end_clean();
+		echo $mapview_output;
+	}
 }
 
 ?>
