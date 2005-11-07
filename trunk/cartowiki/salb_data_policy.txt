@@ -1,0 +1,7 @@
+http://www3.who.int/whosis/gis/salb/data_policy_statement.htm
+DATA POLICY
+The SALB database is copyrighted. The owner of the data agrees on the use, reproduction, distribution, display,
+publication and dissemination at no cost to third parties of the SALB database, in any manner and in any form
+whatsoever, subject to the copyright and acknowledgement mentioned in the metadata.  It is prohibited to
+change the contents of the database without consent of the owner. The SALB database is for non-commercial
+purposes only.
