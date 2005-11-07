@@ -36,6 +36,8 @@ TODO : parametre de desactivation du cache
 TODO : revoir la notation des commentaires
 TODO : centrage point sur la maille optionnel
 TODO : retraiter le nom de l'image generer pour syntaxe correcte
+TODO : Gerer un peu mieux la suppression des anciennes version : risque de collision si nom de page
+debutant de la meme facon
 */
 
 
