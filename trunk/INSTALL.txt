@@ -1,6 +1,0 @@
-JPEG.php
-med_utm_31_t.jpg
-wz_tooltip.js
-
-formatter/wakka.php
-actions/mapview.php
