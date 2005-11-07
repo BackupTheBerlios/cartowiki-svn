@@ -3,6 +3,7 @@
 
 $CartoWikiConfig = array(
 	'cartowiki_version' => '0.1',
-	'cache_path' => 'CACHE'
+	'cartowiki_path' => 'cartowiki',
+	'cache_path' => 'cartowiki/CACHE'
 	)
 ?>

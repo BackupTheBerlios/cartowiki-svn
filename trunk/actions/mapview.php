@@ -35,6 +35,7 @@ TODO : test centrage
 TODO : parametre de desactivation du cache
 TODO : revoir la notation des commentaires
 TODO : centrage point sur la maille optionnel
+TODO : retraiter le nom de l'image generer pour syntaxe correcte
 */
 
 
@@ -46,8 +47,8 @@ TODO : centrage point sur la maille optionnel
 include('cartowiki.config.php');
 
 if ($this->page['latest']=='Y') {
-	if (!isset($_REQUEST["refresh"]) || ($_REQUEST["refresh"]!=1)) {
-			$cachefile = $CartoWikiConfig['cache_path'].'/'.$this->getPageTag().$this->page['time'];
+	if (!isset($_REQUEST['refresh']) || ($_REQUEST['refresh']!=1)) {
+			$cachefile = $CartoWikiConfig['cache_path'].'/'.$this->getPageTag().$this->page['time'].'.cache.txt';
 			if (file_exists($cachefile) ) {
 		    	include($cachefile);
 	    		echo "<!-- Cached copy, generated ".date('H:i', filemtime($cachefile))." -->\n";
@@ -60,29 +61,29 @@ if ($this->page['latest']=='Y') {
 // Les parametres sont dans le commentaire Jpeg de l'image, utiliser le programme jhead pour les initialiser
 // Libraires de lecture des informations associées à l'image
 
-include ("JPEG.php");
+include_once($CartoWikiConfig['cartowiki_path'].'/bib/metadata/'.'JPEG.php');
 
 // Lecture Parametres de l'action :
 
 // nom de la carte
 
-$src_map = $this->GetParameter("srcmap");
+$src_map = $this->GetParameter('srcmap');
 if (!$src_map) {
-	echo $this->Format("//Parametre srcmap absent//.");
+	echo $this->Format('//Parametre srcmap absent//');
 	exit;
 }
 
 // Couleur par defaut : vert
 
 // Test valeurs de parametres historique pour compatibilité ascendante
-$couleur = $this->GetParameter("color");
+$couleur = $this->GetParameter('color');
 if (!$couleur) {
-	$couleur = $this->GetParameter("pointcolor");
+	$couleur = $this->GetParameter('pointcolor');
 }
 
 // Taille point par défaut : 10
 
-$point_size=$this->GetParameter("pointsize");
+$point_size=$this->GetParameter('pointsize');
 if (!$point_size) {
 	$point_size=10;
 }
@@ -92,7 +93,7 @@ if (!$point_size) {
 
 // Lecture commentaires embarqués dans la page
 
-$comment=get_jpeg_Comment(get_jpeg_header_data($src_map));
+$comment=get_jpeg_Comment(get_jpeg_header_data($CartoWikiConfig['cartowiki_path'].'/images/'.$src_map));
 
 // Solution facile de lecture, mais difficile à maintenir : notamment la notation
 parse_str($comment);
@@ -205,26 +206,26 @@ $p['30T']=($Px_echelle_X2['31T'] - $Px_echelle_X1['31T'] ) / ($M_UTM_X2['31T'] -
 
 // Initialisation
 
-$usemap="";
-$ellipse="";
+$usemap='';
+$ellipse='';
 
 unset($_SESSION['location']);
 
-$dest_map = $this->getPageTag().".jpg";
+$dest_map = $this->getPageTag().$this->page['time'].'.jpg';
 
-$img = imagecreatefromjpeg($src_map);
+$img = imagecreatefromjpeg($CartoWikiConfig['cartowiki_path'].'/images/'.$src_map);
 
 switch ($couleur) {
-		case "green":
+		case 'green':
 		   $fill = imagecolorallocate($img, 0, 255, 0);
 		   break;
-		case "red":
+		case 'red':
 		   $fill = imagecolorallocate($img, 255, 0, 0);
 		   break;
-		case "blue":
+		case 'blue':
 		   $fill = imagecolorallocate($img, 0, 0, 255);
 		   break;
-		case "black":
+		case 'black':
 		   $fill = imagecolorallocate($img, 0, 0, 0);
 		   break;
 		default:
@@ -243,19 +244,19 @@ echo "<a name=\"topmap\"></a>";
 // 5 : (On pourrait faire un super soundex  ici ...)
 
 
-if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
+if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 	$i=0;
 	foreach ($locations[1] as $location){
 		// extraction commentaire, si present
-		preg_match("/\[(.*)\]/",$location,$comments);
+		preg_match('/\[(.*)\]/',$location,$comments);
 		$comment=$comments[1];
 		if ($comment) {
 			// On enleve le commentaire, c'est plus simple pour la suite (c'est bof hein)
-			$location=preg_replace("/\[(.*)\]/", "", $location);
-			$comment=" : ".$comment;
+			$location=preg_replace('/\[(.*)\]/', '', $location);
+			$comment=' : '.$comment;
 		}
 		// La ville et le departement ont ete passe en parametre
-		preg_match("/(.*)\((.*)\)/",$location,$elements);
+		preg_match('/(.*)\((.*)\)/',$location,$elements);
 		if ($elements[1]) {
 			$name=$elements[1];
 			$code=$elements[2];
@@ -263,7 +264,7 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 		}
 		else {
 			// Seule la ville a ete passe en parametre
-			preg_match("/(.*)/",$location,$elements);
+			preg_match('/(.*)/',$location,$elements);
 			$name=$elements[1];
 			$utm=$this->LoadSingle("select * from locations where name = '".mysql_escape_string($name)."' limit 1");
 		}
@@ -295,17 +296,17 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 
 			// On centre le point au milieu de la maille 10x10 par defaut ...
 
-			$pad = str_repeat ("0" ,(7 - strlen( $utm['x_utm'])));
+			$pad = str_repeat ('0' ,(7 - strlen( $utm['x_utm'])));
 			$utm['x_utm'] = $pad.$utm['x_utm'];
 
-			$pad = str_repeat ("0" ,(7 - strlen( $utm['y_utm'])));
+			$pad = str_repeat ('0' ,(7 - strlen( $utm['y_utm'])));
 			$utm['y_utm'] = $pad.$utm['y_utm'];
 
 			$utm['x_utm']=substr($utm['x_utm'] ,0,3);
-			$utm['x_utm'] =$utm['x_utm']."5000";
+			$utm['x_utm'] =$utm['x_utm'].'5000';
 
 			$utm['y_utm']=substr($utm['y_utm'] ,0,3);
-			$utm['y_utm'] =$utm['y_utm']."5000";
+			$utm['y_utm'] =$utm['y_utm'].'5000';
 
 
 			// Fuseau 31 T
@@ -352,12 +353,12 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 
 			// On stocke les commentaires pour affichage dans les tooltips
 
-			$link=" <a href=\"#MAP_".$i."\">".$name.$comment."</a>";
+			$link="<a href=\"#MAP_".$i."\">".$name.$comment."</a>";
 
 			// Commentaire deja présent ? : on ajoute à la suite
 			if ($text[$x.'|'.$y]) {
 				$link=
-				$text[$x.'|'.$y]=$text[$x.'|'.$y]."<br>".$link;
+				$text[$x.'|'.$y]=$text[$x.'|'.$y].'<br>'.$link;
 			}
 			// Nouveau commentaire
 			else {
@@ -376,7 +377,7 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 	// Generation maparea + tooltips
 
 	foreach ($text as $coord => $maptext ) {
-		list($x,$y)=explode("|",$coord);
+		list($x,$y)=explode('|',$coord);
 		//imagearc($img, $x, $y, 10, 10, 0, 360, $green);
 		// Gd2, idealement il faudrait tester la disponibilite de la fonction et se rabbatre sur imagearc sinon
 		imagefilledellipse($img, $x, $y, $point_size, $point_size, $fill);
@@ -384,40 +385,58 @@ if (preg_match_all("/~~(.*)~~/",$this->page["body"],$locations)){
 		$maptext=preg_replace("/'/", "\'", $maptext);
 		$maptext=preg_replace("/\"/", "\\'", $maptext);
 
-
 		$usemap=$usemap."<area shape=\"circle\" alt=\"\" coords=\"".$x.",".$y.",5\" onmouseover=\"this.T_BGCOLOR='#E6FFFB';this.T_OFFSETX=2;this.T_OFFSETY=2;this.T_STICKY=1;return escape('".$maptext."')\" href=\"#\"/>";
 
 	}
 
-	imageinterlace($img,1);
-	imagejpeg($img, $dest_map);
+	// Generation direct sur ancienne version de la page ... sinon generation en cache
 
-	imagedestroy($img);
+	if (($this->page['latest']=='N') || (isset($_REQUEST['refresh']) && ($_REQUEST['refresh']==1))) {
+		imageinterlace($img,1);
+		imagejpeg($img, $CartoWikiConfig['cache_path'].'/'.$dest_map,95);
+		imagedestroy($img);
+	}
 
-	echo "<img src=\"$dest_map\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
+
+	echo "<img src=\"".($CartoWikiConfig['cache_path'].'/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
 	echo "<map name=\"themap\" id=\"themap\">";
 	echo $usemap;
 	echo "</map>";
 
 
 
-	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"wz_tooltip.js\"></script>";
+	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".$CartoWikiConfig['cartowiki_path'].'/bib/tooltip/'."wz_tooltip.js\"></script>";
 
 }
 
 // Affichage image origine
 else {
-	echo "<img src=\"$src_map\" style=\"border:none; cursor:crosshair\" alt=\"\"</img><br />\n";
+	echo "<img src=\"".$CartoWikiConfig['cartowiki_path'].'/images/'.$src_map."\" style=\"border:none; cursor:crosshair\" alt=\"\"</img><br />\n";
 	echo "</map>";
 }
+
 
 // Fin gestion du cache
 
 if ($this->page['latest']=='Y') {
-	if (!isset($_REQUEST["refresh"]) || ($_REQUEST["refresh"]!=1)) {
-		foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*') as $fn) {
+	if (!isset($_REQUEST['refresh']) || ($_REQUEST['refresh']!=1)) {
+		// Suppresion texte en cache
+		foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
 	    	   unlink($fn);
 		}
+		// Suppresion image en cache
+		foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*'.'.jpg') as $fn) {
+	    	   unlink($fn);
+		}
+
+		// Generation image cache
+
+		imageinterlace($img,1);
+		imagejpeg($img, $CartoWikiConfig['cache_path'].'/'.$dest_map,95);
+		imagedestroy($img);
+
+		// Generation texte cache
+
 		$fp = fopen($cachefile, 'w');
 		$mapview_output = ob_get_contents();
 		fwrite($fp, $mapview_output);
