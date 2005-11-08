@@ -41,23 +41,25 @@ debutant de la meme facon
 */
 
 
-// Gestion du cache :
-// Cache de la dernière page uniquement, verrou de mise à jour pris en charge par Wikini
-// Forcage rafraichissement par adjonction de &refresh=1 à la requête.
+// Forcage rafraichissement par adjonction de &refresh=1 à la requête :
 //
-
 include('cartowiki.config.php');
 
-if ($this->page['latest']=='Y') {
-	if (!isset($_REQUEST['refresh']) || ($_REQUEST['refresh']!=1)) {
-			$cachefile = $CartoWikiConfig['cache_path'].'/'.$this->getPageTag().$this->page['time'].'.cache.txt';
-			if (file_exists($cachefile) ) {
-		    	include($cachefile);
-	    		echo "<!-- Cached copy, generated ".date('H:i', filemtime($cachefile))." -->\n";
-	    		return;
-			}
-		ob_start(); //  Gestion du cache
+// Cache :
+// Utilisation la version en cours uniquement :
+// Si present : affichage
+// Si absent : passage en mode buffer pour ecriture en fin de programme
+
+$cachefile = $CartoWikiConfig['cache_path'].'/'.$this->getPageTag().$this->page['time'].'.cache.txt';
+if (($this->page['latest']=='Y')) {
+	if ((!isset($_REQUEST['refresh']) || $_REQUEST['refresh']!=1)) {
+		if (file_exists($cachefile) ) {
+	    	include($cachefile);
+    		echo "<!-- Cached copy, generated ".date('H:i', filemtime($cachefile))." -->\n";
+    		return;
+		}
 	}
+	ob_start(); //  Gestion du cache
 }
 
 // Les parametres sont dans le commentaire Jpeg de l'image, utiliser le programme jhead pour les initialiser
@@ -213,7 +215,13 @@ $ellipse='';
 
 unset($_SESSION['location']);
 
-$dest_map = $this->getPageTag().$this->page['time'].'.jpg';
+if ($this->page['latest']=='N') {
+	$dest_map = 'revision.'.$this->getPageTag().'.jpg';
+}
+else {
+	$dest_map = $this->getPageTag().$this->page['time'].'.jpg';
+}
+
 
 $img = imagecreatefromjpeg($CartoWikiConfig['cartowiki_path'].'/images/'.$src_map);
 
@@ -346,8 +354,6 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 				}
 			}
 
-
-
 			$x=round($x);
 			$y=round($y);
 
@@ -368,7 +374,7 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 			}
 
 		}
-		// Pas trouvé : on stocke l'occurence pour transmission au formateur qui affichera le message d'erreur.
+		// Pas trouvé : on stocke la ligne en session pour transmission au formatter qui affichera le message d'erreur.
 
 		else {
 			$_SESSION['location'] [$i]='NF';
@@ -391,20 +397,18 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 
 	}
 
-	// Generation direct sur ancienne version de la page ... sinon generation en cache
+	// Ancienne version : pas de gestion de cache : on produit une image.
 
-	if (($this->page['latest']=='N') || (isset($_REQUEST['refresh']) && ($_REQUEST['refresh']==1))) {
+	if ($this->page['latest']=='N') {
 		imageinterlace($img,1);
 		imagejpeg($img, $CartoWikiConfig['cache_path'].'/'.$dest_map,95);
 		imagedestroy($img);
 	}
 
-
 	echo "<img src=\"".($CartoWikiConfig['cache_path'].'/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
 	echo "<map name=\"themap\" id=\"themap\">";
 	echo $usemap;
 	echo "</map>";
-
 
 
 	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".$CartoWikiConfig['cartowiki_path'].'/bib/tooltip/'."wz_tooltip.js\"></script>";
@@ -420,32 +424,36 @@ else {
 
 // Fin gestion du cache
 
-if ($this->page['latest']=='Y') {
-	if (!isset($_REQUEST['refresh']) || ($_REQUEST['refresh']!=1)) {
-		// Suppresion texte en cache
-		foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
-	    	   unlink($fn);
-		}
-		// Suppresion image en cache
-		foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*'.'.jpg') as $fn) {
-	    	   unlink($fn);
-		}
 
-		// Generation image cache
+// Utilisation pour la derniere page uniquement ou pour du refresh
 
-		imageinterlace($img,1);
-		imagejpeg($img, $CartoWikiConfig['cache_path'].'/'.$dest_map,95);
-		imagedestroy($img);
+if (($this->page['latest']=='Y') || (($this->page['latest']=='Y') && isset($_REQUEST['refresh']) && $_REQUEST['refresh']==1)) {
 
-		// Generation texte cache
+	echo "<a href=\"".$this->Href()."&refresh=1\">*</a>";
 
-		$fp = fopen($cachefile, 'w');
-		$mapview_output = ob_get_contents();
-		fwrite($fp, $mapview_output);
-		fclose($fp);
-		ob_end_clean();
-		echo $mapview_output;
-	}
+	// Generation image cache
+
+    // Suppresion texte en cache
+    foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
+           unlink($fn);
+    }
+    // Suppresion image en cache
+    foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*'.'.jpg') as $fn) {
+           unlink($fn);
+    }
+
+	imageinterlace($img,1);
+	imagejpeg($img, $CartoWikiConfig['cache_path'].'/'.$dest_map,95);
+	imagedestroy($img);
+
+	// Generation texte cache
+
+	$fp = fopen($cachefile, 'w');
+	$mapview_output = ob_get_contents();
+	fwrite($fp, $mapview_output);
+	fclose($fp);
+	ob_end_clean();
+	echo $mapview_output;
 }
 
 ?>
