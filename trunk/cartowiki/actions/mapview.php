@@ -50,7 +50,7 @@ include('cartowiki.config.php');
 // Si present : affichage
 // Si absent : passage en mode buffer pour ecriture en fin de programme
 
-$cachefile = $CartoWikiConfig['cache_path'].'/'.$this->getPageTag().$this->page['time'].'.cache.txt';
+$cachefile = $CartoWikiConfig['cartowiki_path'].'/CACHE/'.$this->getPageTag().$this->page['time'].'.cache.txt';
 if (($this->page['latest']=='Y')) {
 	if ((!isset($_REQUEST['refresh']) || $_REQUEST['refresh']!=1)) {
 		if (file_exists($cachefile) ) {
@@ -401,11 +401,11 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 
 	if ($this->page['latest']=='N') {
 		imageinterlace($img,1);
-		imagejpeg($img, $CartoWikiConfig['cache_path'].'/'.$dest_map,95);
+		imagejpeg($img, $CartoWikiConfig['cartowiki_path'].'/CACHE/'.$dest_map,95);
 		imagedestroy($img);
 	}
 
-	echo "<img src=\"".($CartoWikiConfig['cache_path'].'/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
+	echo "<img src=\"".($CartoWikiConfig['cartowiki_path'].'/CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
 	echo "<map name=\"themap\" id=\"themap\">";
 	echo $usemap;
 	echo "</map>";
@@ -434,16 +434,16 @@ if (($this->page['latest']=='Y') || (($this->page['latest']=='Y') && isset($_REQ
 	// Generation image cache
 
     // Suppresion texte en cache
-    foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
+    foreach(glob($CartoWikiConfig['cartowiki_path'].'/CACHE/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
            unlink($fn);
     }
     // Suppresion image en cache
-    foreach(glob($CartoWikiConfig['cache_path'].'/'.$this->getPageTag().'*'.'.jpg') as $fn) {
+    foreach(glob($CartoWikiConfig['cartowiki_path'].'/CACHE/'.$this->getPageTag().'*'.'.jpg') as $fn) {
            unlink($fn);
     }
 
 	imageinterlace($img,1);
-	imagejpeg($img, $CartoWikiConfig['cache_path'].'/'.$dest_map,95);
+	imagejpeg($img, $CartoWikiConfig['cartowiki_path'].'/CACHE/'.$dest_map,95);
 	imagedestroy($img);
 
 	// Generation texte cache
