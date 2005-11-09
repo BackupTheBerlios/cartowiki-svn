@@ -40,17 +40,16 @@ TODO : Gerer un peu mieux la suppression des anciennes version : risque de colli
 debutant de la meme facon
 */
 
-
 // Forcage rafraichissement par adjonction de &refresh=1 à la requête :
 //
-include('cartowiki.config.php');
+include('cartowiki/conf/cartowiki.config.php');
 
 // Cache :
 // Utilisation la version en cours uniquement :
 // Si present : affichage
 // Si absent : passage en mode buffer pour ecriture en fin de programme
 
-$cachefile = $CartoWikiConfig['cartowiki_path'].'/CACHE/'.$this->getPageTag().$this->page['time'].'.cache.txt';
+$cachefile = 'cartowiki/CACHE/'.$this->getPageTag().$this->page['time'].'.cache.txt';
 if (($this->page['latest']=='Y')) {
 	if ((!isset($_REQUEST['refresh']) || $_REQUEST['refresh']!=1)) {
 		if (file_exists($cachefile) ) {
@@ -65,7 +64,7 @@ if (($this->page['latest']=='Y')) {
 // Les parametres sont dans le commentaire Jpeg de l'image, utiliser le programme jhead pour les initialiser
 // Libraires de lecture des informations associées à l'image
 
-include_once($CartoWikiConfig['cartowiki_path'].'/bib/metadata/'.'JPEG.php');
+include_once('cartowiki/bib/metadata/'.'JPEG.php');
 
 // Lecture Parametres de l'action :
 
@@ -97,7 +96,7 @@ if (!$point_size) {
 
 // Lecture commentaires embarqués dans la page
 
-$comment=get_jpeg_Comment(get_jpeg_header_data($CartoWikiConfig['cartowiki_path'].'/images/'.$src_map));
+$comment=get_jpeg_Comment(get_jpeg_header_data('cartowiki/images/'.$src_map));
 
 // Solution facile de lecture, mais difficile à maintenir : notamment la notation
 parse_str($comment);
@@ -223,7 +222,7 @@ else {
 }
 
 
-$img = imagecreatefromjpeg($CartoWikiConfig['cartowiki_path'].'/images/'.$src_map);
+$img = imagecreatefromjpeg('cartowiki/images/'.$src_map);
 
 switch ($couleur) {
 		case 'green':
@@ -401,23 +400,23 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 
 	if ($this->page['latest']=='N') {
 		imageinterlace($img,1);
-		imagejpeg($img, $CartoWikiConfig['cartowiki_path'].'/CACHE/'.$dest_map,95);
+		imagejpeg($img, 'cartowiki/CACHE/'.$dest_map,95);
 		imagedestroy($img);
 	}
 
-	echo "<img src=\"".($CartoWikiConfig['cartowiki_path'].'/CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
+	echo "<img src=\"".('cartowiki/CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
 	echo "<map name=\"themap\" id=\"themap\">";
 	echo $usemap;
 	echo "</map>";
 
 
-	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".$CartoWikiConfig['cartowiki_path'].'/bib/tooltip/'."wz_tooltip.js\"></script>";
+	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
 
 }
 
 // Affichage image origine
 else {
-	echo "<img src=\"".$CartoWikiConfig['cartowiki_path'].'/images/'.$src_map."\" style=\"border:none; cursor:crosshair\" alt=\"\"</img><br />\n";
+	echo "<img src=\"".'cartowiki/images/'.$src_map."\" style=\"border:none; cursor:crosshair\" alt=\"\"</img><br />\n";
 	echo "</map>";
 }
 
@@ -434,16 +433,16 @@ if (($this->page['latest']=='Y') || (($this->page['latest']=='Y') && isset($_REQ
 	// Generation image cache
 
     // Suppresion texte en cache
-    foreach(glob($CartoWikiConfig['cartowiki_path'].'/CACHE/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
+    foreach(glob('cartowiki/CACHE/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
            unlink($fn);
     }
     // Suppresion image en cache
-    foreach(glob($CartoWikiConfig['cartowiki_path'].'/CACHE/'.$this->getPageTag().'*'.'.jpg') as $fn) {
+    foreach(glob('cartowiki/CACHE/'.$this->getPageTag().'*'.'.jpg') as $fn) {
            unlink($fn);
     }
 
 	imageinterlace($img,1);
-	imagejpeg($img, $CartoWikiConfig['cartowiki_path'].'/CACHE/'.$dest_map,95);
+	imagejpeg($img, 'cartowiki/CACHE/'.$dest_map,95);
 	imagedestroy($img);
 
 	// Generation texte cache
