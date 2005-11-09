@@ -454,6 +454,7 @@ if (($this->page['latest']=='Y') || (($this->page['latest']=='Y') && isset($_REQ
 	fclose($fp);
 	ob_end_clean();
 	echo $mapview_output;
+
 }
 
 ?>
