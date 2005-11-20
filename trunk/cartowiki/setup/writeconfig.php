@@ -37,12 +37,12 @@ while (list(, $my_dir) = each($test_dirs)) {
         if (!test_ecrire($my_dir)) {
                 @umask(0);
                 if (@file_exists($my_dir)) {
-                        chmod($my_dir, 0777);
+                        @chmod($my_dir, 0777);
                         // ???
                         if (!test_ecrire($my_dir))
-                                chmod($my_dir, 0775);
+                                @chmod($my_dir, 0775);
                         if (!test_ecrire($my_dir))
-                                chmod($my_dir, 0755);
+                                @chmod($my_dir, 0755);
                         if (!test_ecrire($my_dir))
                                 $bad_dirs[] = "<LI>".$my_dir;
                 } else
@@ -93,6 +93,7 @@ if ($fp)
 	fclose($fp);
 
 	echo "<p>Voila c'est termin&eacute; ! Vous pouvez <a href=\"",$wakkaConfig["base_url"],"\">retourner sur votre site WikiNi</a>. Il est conseill&eacute; de retirer l'acc&egrave;s en &eacute;criture au fichier <tt>cartowiki/conf/cartowiki.config.php</tt>. Ceci peut &ecirc;tre une faille dans la s&eacute;curit&eacute;.</p>";
+
 }
 else
 {
@@ -113,5 +114,6 @@ cr&eacute;&eacute;. Veuillez vous assurez que votre serveur a les droits d'acc&e
 
 test("Copie action mapview.php ...",@copy(dirname(__FILE__).'/../actions/mapview.php',dirname(__FILE__).'/../../actions/mapview.php'),"",0);
 test("Copie formatter wakka.php ...",@copy(dirname(__FILE__).'/../formatters/wakka.php',dirname(__FILE__).'/../../formatter/wakka.php'),"",0);
+
 
 ?>

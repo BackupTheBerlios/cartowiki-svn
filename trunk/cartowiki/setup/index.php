@@ -1,5 +1,7 @@
 <?php
 
+// TODO : chargement table locations par partie
+// Probleme copie si fichier deja present
 // Attention au safe mode sur le .. !
 
 define('CARTOWIKI_VERSION','0.1');
