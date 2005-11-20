@@ -42,14 +42,14 @@ debutant de la meme facon
 
 // Forcage rafraichissement par adjonction de &refresh=1 à la requête :
 //
-include('cartowiki/conf/cartowiki.config.php');
+include('conf/cartowiki.config.php');
 
 // Cache :
 // Utilisation la version en cours uniquement :
 // Si present : affichage
 // Si absent : passage en mode buffer pour ecriture en fin de programme
 
-$cachefile = 'cartowiki/CACHE/'.$this->getPageTag().$this->page['time'].'.cache.txt';
+$cachefile = '	'.$this->getPageTag().$this->page['time'].'.cache.txt';
 if (($this->page['latest']=='Y')) {
 	if ((!isset($_REQUEST['refresh']) || $_REQUEST['refresh']!=1)) {
 		if (file_exists($cachefile) ) {
@@ -400,11 +400,11 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 
 	if ($this->page['latest']=='N') {
 		imageinterlace($img,1);
-		imagejpeg($img, 'cartowiki/CACHE/'.$dest_map,95);
+		imagejpeg($img, 'CACHE/'.$dest_map,95);
 		imagedestroy($img);
 	}
 
-	echo "<img src=\"".('cartowiki/CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
+	echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
 	echo "<map name=\"themap\" id=\"themap\">";
 	echo $usemap;
 	echo "</map>";
@@ -433,16 +433,16 @@ if (($this->page['latest']=='Y') || (($this->page['latest']=='Y') && isset($_REQ
 	// Generation image cache
 
     // Suppresion texte en cache
-    foreach(glob('cartowiki/CACHE/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
+    foreach(glob('CACHE/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
            unlink($fn);
     }
     // Suppresion image en cache
-    foreach(glob('cartowiki/CACHE/'.$this->getPageTag().'*'.'.jpg') as $fn) {
+    foreach(glob('CACHE/'.$this->getPageTag().'*'.'.jpg') as $fn) {
            unlink($fn);
     }
 
 	imageinterlace($img,1);
-	imagejpeg($img, 'cartowiki/CACHE/'.$dest_map,95);
+	imagejpeg($img, 'CACHE/'.$dest_map,95);
 	imagedestroy($img);
 
 	// Generation texte cache
