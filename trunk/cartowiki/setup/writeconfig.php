@@ -27,8 +27,8 @@ function test_ecrire($my_dir) {
 
 // rajouter celui passer dans l'url ou celui du source (a l'installation)
 
-$test_dirs[]=dirname(__FILE__).'/../conf/';
-$test_dirs[]=dirname(__FILE__).'/../CACHE/';
+$test_dirs[]=dirname(__FILE__).'/../../conf/';
+$test_dirs[]=dirname(__FILE__).'/../../CACHE/';
 
 unset($bad_dirs);
 unset($absent_dirs);
@@ -86,6 +86,11 @@ $configCode .= implode(",\n", $entries).");\n?>";
 echo "<b>Cr&eacute;ation du fichier de configuration en cours...</b><br>\n";
 test("&Eacute;criture du fichier de configuration <tt>cartowiki/conf/cartowiki.config.php</tt>...", $fp = @fopen(dirname(__FILE__).'/../conf/cartowiki.config.php', "w"), "", 0);
 
+echo "<br>";
+echo "<b>Installation contribution ...</b><br>\n";
+test("Copie action mapview.php ...",@copy(dirname(__FILE__).'/../actions/mapview.php',dirname(__FILE__).'/../../actions/mapview.php'),"",0);
+test("Copie formatter wakka.php ...",@copy(dirname(__FILE__).'/../formatters/wakka.php',dirname(__FILE__).'/../../formatter/wakka.php'),"",0);
+
 if ($fp)
 {
 	fwrite($fp, $configCode);
@@ -110,10 +115,6 @@ cr&eacute;&eacute;. Veuillez vous assurez que votre serveur a les droits d'acc&e
 	echo"<div style=\"background-color: #EEEEEE; padding: 10px 10px;\">\n<xmp>",$configCode,"</xmp>\n</div>\n";
 }
 
-// try to copy  file
-
-test("Copie action mapview.php ...",@copy(dirname(__FILE__).'/../actions/mapview.php',dirname(__FILE__).'/../../actions/mapview.php'),"",0);
-test("Copie formatter wakka.php ...",@copy(dirname(__FILE__).'/../formatters/wakka.php',dirname(__FILE__).'/../../formatter/wakka.php'),"",0);
 
 
 ?>

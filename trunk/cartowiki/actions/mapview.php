@@ -49,7 +49,7 @@ include('conf/cartowiki.config.php');
 // Si present : affichage
 // Si absent : passage en mode buffer pour ecriture en fin de programme
 
-$cachefile = '	'.$this->getPageTag().$this->page['time'].'.cache.txt';
+$cachefile = 'CACHE/'.$this->getPageTag().$this->page['time'].'.cache.txt';
 if (($this->page['latest']=='Y')) {
 	if ((!isset($_REQUEST['refresh']) || $_REQUEST['refresh']!=1)) {
 		if (file_exists($cachefile) ) {
@@ -90,6 +90,13 @@ $point_size=$this->GetParameter('pointsize');
 if (!$point_size) {
 	$point_size=10;
 }
+
+// parametre centrage
+$centrage=$this->GetParameter('pointcenter');
+if ($centrage=='') {
+	$centrage=1;
+}
+
 
 // Fin lecture Parametre de l'action
 
@@ -303,19 +310,22 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 
 		if ($utm) {
 
-			// On centre le point au milieu de la maille 10x10 par defaut ...
+			if ($centrage) {
+				// On centre le point au milieu de la maille 10x10 par defaut ...
 
-			$pad = str_repeat ('0' ,(7 - strlen( $utm['x_utm'])));
-			$utm['x_utm'] = $pad.$utm['x_utm'];
 
-			$pad = str_repeat ('0' ,(7 - strlen( $utm['y_utm'])));
-			$utm['y_utm'] = $pad.$utm['y_utm'];
+				$pad = str_repeat ('0' ,(7 - strlen( $utm['x_utm'])));
+				$utm['x_utm'] = $pad.$utm['x_utm'];
 
-			$utm['x_utm']=substr($utm['x_utm'] ,0,3);
-			$utm['x_utm'] =$utm['x_utm'].'5000';
+				$pad = str_repeat ('0' ,(7 - strlen( $utm['y_utm'])));
+				$utm['y_utm'] = $pad.$utm['y_utm'];
 
-			$utm['y_utm']=substr($utm['y_utm'] ,0,3);
-			$utm['y_utm'] =$utm['y_utm'].'5000';
+				$utm['x_utm']=substr($utm['x_utm'] ,0,3);
+				$utm['x_utm'] =$utm['x_utm'].'5000';
+
+				$utm['y_utm']=substr($utm['y_utm'] ,0,3);
+				$utm['y_utm'] =$utm['y_utm'].'5000';
+			}
 
 
 			// Fuseau 31 T

@@ -22,6 +22,29 @@ switch ($version)
 {
 case "0":
 	echo "<b>Installation</b><br>\n";
+		$sortie_verif .= '<h2>Insertion des données du fichier sql version '.$version.'</h2>';
+		$sql_contenu = PMA_readFile(INSTAL_CHEMIN_SQL.'papyrus_v'.$version.'.sql');
+		$tab_requete_sql = array();
+		PMA_splitSqlFile($tab_requete_sql, $sql_contenu, '');
+		foreach ($tab_requete_sql as $value) {
+		    $table_nom = '';
+		    if (!empty($value['table_nom'])) {
+			$table_nom = $value['table_nom'];
+		    }
+		    $requete_type = '';
+		    if (!empty($value['type'])) {
+			$requete_type = $value['type'];
+		    }
+		    if ($requete_type == 'create') {
+			$erreur = testerConfig( $sortie_verif, 'Création table '.$table_nom.'...', @mysql_query($value['query'], $dblink),
+						'Déjà créée ?', 0, $erreur);
+		    } else if ($requete_type == 'alter') {
+			$erreur = testerConfig( $sortie_verif, 'Modification structure table '.$table_nom.'...', @mysql_query($value['query'], $dblink),
+						'Déjà modifiée ?', 0, $erreur);
+		    } else if ($requete_type == 'insert') {
+			$erreur = testerConfig( $sortie_verif, 'Insertion table '.$table_nom.'...', @mysql_query($value['query'], $dblink),
+						'Données déjà présente ?', 0, $erreur);
+		    }
 		break;
 }
 

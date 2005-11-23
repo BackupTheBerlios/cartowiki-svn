@@ -8,7 +8,7 @@ define('CARTOWIKI_VERSION','0.1');
 
 if (file_exists(dirname(__FILE__).'/../../wakka.config.php')) include(dirname(__FILE__).'/../../wakka.config.php');
 
-if (file_exists(dirname(__FILE__).'/../conf/cartowiki.config.php')) include(dirname(__FILE__).'/../conf/cartowiki.config.php');
+if (file_exists(dirname(__FILE__).'/../../conf/cartowiki.config.php')) include(dirname(__FILE__).'/../../conf/cartowiki.config.php');
 
 if ($CartoConfig["cartowiki_version"] != CARTOWIKI_VERSION) {
 	if (!isset($_REQUEST["installAction"]) OR !$installAction = trim($_REQUEST["installAction"])) $installAction = "default";
