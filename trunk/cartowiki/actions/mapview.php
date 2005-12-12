@@ -49,7 +49,7 @@ include('conf/cartowiki.config.php');
 // Si present : affichage
 // Si absent : passage en mode buffer pour ecriture en fin de programme
 
-$cachefile = 'CACHE/'.$this->getPageTag().$this->page['time'].'.cache.txt';
+$cachefile = 'CACHE/'.$this->getPageTag().ereg_replace('[: ]', '_', $this->page['time']).'.cache.txt';
 if (($this->page['latest']=='Y')) {
 	if ((!isset($_REQUEST['refresh']) || $_REQUEST['refresh']!=1)) {
 		if (file_exists($cachefile) ) {
@@ -103,10 +103,10 @@ if ($centrage=='') {
 
 // Lecture commentaires embarqués dans la page
 
-$comment=get_jpeg_Comment(get_jpeg_header_data('cartowiki/images/'.$src_map));
+$comment_jpeg=get_jpeg_Comment(get_jpeg_header_data('cartowiki/images/'.$src_map));
 
 // Solution facile de lecture, mais difficile à maintenir : notamment la notation
-parse_str($comment);
+parse_str($comment_jpeg);
 
 
 
@@ -225,7 +225,7 @@ if ($this->page['latest']=='N') {
 	$dest_map = 'revision.'.$this->getPageTag().'.jpg';
 }
 else {
-	$dest_map = $this->getPageTag().$this->page['time'].'.jpg';
+	$dest_map = $this->getPageTag().ereg_replace('[: ]', '_', $this->page['time']).'.jpg';
 }
 
 
@@ -248,6 +248,7 @@ switch ($couleur) {
 		   $fill = imagecolorallocate($img, 0, 255, 0);
 }
 
+print_r($_POST);
 
 echo "<a name=\"topmap\"></a>";
 
@@ -269,20 +270,33 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		if ($comment) {
 			// On enleve le commentaire, c'est plus simple pour la suite (c'est bof hein)
 			$location=preg_replace('/\[(.*)\]/', '', $location);
-			$comment=' : '.$comment;
 		}
-		// La ville et le departement ont ete passe en parametre
-		preg_match('/(.*)\((.*)\)/',$location,$elements);
+		// UTM en parametre
+		preg_match('/([0-9][0-9]*)-([0-9][0-9]*)-([0-9][0-9]*)/',$location,$elements);
 		if ($elements[1]) {
-			$name=$elements[1];
-			$code=$elements[2];
-			$utm=$this->LoadSingle("select * from locations where name = '".mysql_escape_string($name)."' and code = '".mysql_escape_string($code)."' limit 1");
+			$utm['x_utm'] = $elements[1];
+			$utm['y_utm'] = $elements[2];
+			$utm['sector']= $elements[3].'T';
+			$utm['name']='';
+			$pad = str_repeat ('0' ,(7 - strlen( $utm['x_utm'])));
+			$utm['x_utm'] = $pad.$utm['x_utm'];
+			$pad = str_repeat ('0' ,(7 - strlen( $utm['y_utm'])));
+			$utm['y_utm'] = $pad.$utm['y_utm'];
 		}
 		else {
-			// Seule la ville a ete passe en parametre
-			preg_match('/(.*)/',$location,$elements);
-			$name=$elements[1];
-			$utm=$this->LoadSingle("select * from locations where name = '".mysql_escape_string($name)."' limit 1");
+			// La ville et le departement ont ete passe en parametre
+			preg_match('/(.*)\((.*)\)/',$location,$elements);
+			if ($elements[1]) {
+				$name=$elements[1];
+				$code=$elements[2];
+				$utm=$this->LoadSingle("select * from locations where name = '".mysql_escape_string($name)."' and code = '".mysql_escape_string($code)."' limit 1");
+			}
+			else {
+				// Seule la ville a ete passe en parametre
+				preg_match('/(.*)/',$location,$elements);
+				$name=$elements[1];
+				$utm=$this->LoadSingle("select * from locations where name = '".mysql_escape_string($name)."' limit 1");
+			}
 		}
 		if (!$utm) {
 			// On a rien trouvé : nouvelles tentatives
@@ -367,6 +381,9 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 			$y=round($y);
 
 			$name=$utm['name'];
+			if (isset($name) && ($name!='')) {
+				$comment=' : '.$comment;
+			}
 
 			// On stocke les commentaires pour affichage dans les tooltips
 
@@ -374,8 +391,7 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 
 			// Commentaire deja présent ? : on ajoute à la suite
 			if ($text[$x.'|'.$y]) {
-				$link=
-				$text[$x.'|'.$y]=$text[$x.'|'.$y].'<br>'.$link;
+				$link=$text[$x.'|'.$y]=$text[$x.'|'.$y].'<br>'.$link;
 			}
 			// Nouveau commentaire
 			else {
@@ -400,8 +416,7 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		imagefilledellipse($img, $x, $y, $point_size, $point_size, $fill);
 		// pas de double quote dans le texte
 		$maptext=preg_replace("/'/", "\'", $maptext);
-		$maptext=preg_replace("/\"/", "\\'", $maptext);
-
+		$maptext=preg_replace("/\"/", "\'", $maptext);
 		$usemap=$usemap."<area shape=\"circle\" alt=\"\" coords=\"".$x.",".$y.",5\" onmouseover=\"this.T_BGCOLOR='#E6FFFB';this.T_OFFSETX=2;this.T_OFFSETY=2;this.T_STICKY=1;return escape('".$maptext."')\" href=\"#\"/>";
 
 	}
@@ -413,11 +428,16 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		imagejpeg($img, 'CACHE/'.$dest_map,95);
 		imagedestroy($img);
 	}
+ 	
 
-	echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
+    echo "<form action=\"".$this->href("","","refresh=1")."\" method=\"post\">\n";
+ 	//echo "<input border = '0' type='image' src='\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"'";
+ 	echo "<input border = \"0\" type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" "; 
+	echo "name=\"map\">";
 	echo "<map name=\"themap\" id=\"themap\">";
 	echo $usemap;
 	echo "</map>";
+	echo "</form>\n";
 
 
 	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";

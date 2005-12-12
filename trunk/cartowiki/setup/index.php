@@ -16,6 +16,7 @@ if ($CartoConfig["cartowiki_version"] != CARTOWIKI_VERSION) {
 	if (file_exists($installAction.".php")) include($installAction.".php"); else echo "<i>Invalid action</i>";
 	include("footer.php");
 }
+// Deja installé : retour 
 else {
 	header("Location: ". $wakkaConfig["base_url"]);
 	exit;
