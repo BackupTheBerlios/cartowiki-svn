@@ -484,20 +484,20 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		imageinterlace($image_p,1);
 		imagejpeg($image_p, 'CACHE/'.$dest_map,95);		
 		imagedestroy($image_p);
-		
-		echo "<form action=\"".$this->href()."\" method=\"post\">\n";
- 		echo "<input border = \"0\" type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" "; 
-		echo "name=\"map\">";
+				
 		echo "<map name=\"themap\" id=\"themap\">";
 		echo $usemap;
 		echo "</map>";
-		echo "</form>\n";
+	 	//echo "<form action=\"".$this->href()."\" method=\"post\">\n";
+	 	echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+	 	//echo "<input type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+		//echo "name=\"map\"/>";
+		//echo "</form>\n";
 		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
+		
 	} 
  	
  	else {
- 		
-	
 		$usemap='';
 		foreach ($text as $coord => $maptext ) {
 			list($x,$y)=explode('|',$coord);
@@ -510,17 +510,17 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 			$usemap=$usemap."<area shape=\"circle\" alt=\"\" coords=\"".$x.",".$y.",5\" onmouseover=\"this.T_BGCOLOR='#E6FFFB';this.T_OFFSETX=2;this.T_OFFSETY=2;this.T_STICKY=1;return escape('".$maptext."')\" href=\"#\"/>";
 	
 		}
- 		
- 		
-	 	echo "<form action=\"".$this->href("","","refresh=1")."\" method=\"post\">\n";
-	 	echo "<input border = \"0\" type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" "; 
-		echo "name=\"map\">";
+		
 		echo "<map name=\"themap\" id=\"themap\">";
 		echo $usemap;
 		echo "</map>";
-		echo "</form>\n";
+	 	//echo "<form action=\"".$this->href("","","refresh=1")."\" method=\"post\">\n";
+	 	echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+	 	//echo "<input type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+		//echo "name=\"map\"/>";
+		//echo "</form>\n";
 		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
-		
+
  	}
 
 }
@@ -531,6 +531,7 @@ else {
 	echo "</map>";
 }
 
+echo "<br>";
 echo "<a href=\"".$this->Href()."&refresh=1\">*</a>";
 
 // Fin gestion du cache
