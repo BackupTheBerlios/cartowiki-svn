@@ -44,6 +44,7 @@ debutant de la meme facon
 //
 include('conf/cartowiki.config.php');
 
+
 // Cache :
 // Utilisation la version en cours uniquement :
 // Si present : affichage
@@ -76,6 +77,8 @@ if (!$src_map) {
 	exit;
 }
 
+$zoom_map = $this->GetParameter('zoommap');
+
 // Couleur par defaut : vert
 
 // Test valeurs de parametres historique pour compatibilité ascendante
@@ -91,7 +94,7 @@ if (!$point_size) {
 	$point_size=10;
 }
 
-// parametre centrage
+// parametre centrage point
 $centrage=$this->GetParameter('pointcenter');
 if ($centrage=='') {
 	$centrage=1;
@@ -104,6 +107,10 @@ if ($centrage=='') {
 // Lecture commentaires embarqués dans la page
 
 $comment_jpeg=get_jpeg_Comment(get_jpeg_header_data('cartowiki/images/'.$src_map));
+
+
+ 	
+
 
 // Solution facile de lecture, mais difficile à maintenir : notamment la notation
 parse_str($comment_jpeg);
@@ -216,12 +223,9 @@ $p['30T']=($Px_echelle_X2['31T'] - $Px_echelle_X1['31T'] ) / ($M_UTM_X2['31T'] -
 
 // Initialisation
 
-$usemap='';
-$ellipse='';
-
 unset($_SESSION['location']);
 
-if ($this->page['latest']=='N') {
+if ($this->page['latest']=='N' || (( isset($_POST['map_x']) || isset($_POST['map_y'])) && $zoom_map)) {
 	$dest_map = 'revision.'.$this->getPageTag().'.jpg';
 }
 else {
@@ -247,8 +251,6 @@ switch ($couleur) {
 		default:
 		   $fill = imagecolorallocate($img, 0, 255, 0);
 }
-
-print_r($_POST);
 
 echo "<a name=\"topmap\"></a>";
 
@@ -377,17 +379,34 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 				}
 			}
 
+
 			$x=round($x);
 			$y=round($y);
 
+		
 			$name=$utm['name'];
 			if (isset($name) && ($name!='')) {
 				$comment=' : '.$comment;
 			}
-
+			
+			// Le commentaire commence par un mot Wiki ? On lit la premiere image de ce wiki
+			
+			$imagewiki='';
+			$motwiki='';
+			if (preg_match("/^[A-Z][a-z]+[A-Z,0-9][A-Z,a-z,0-9]*/s", $comment,$matches)) {
+				$motwiki=$matches[0];
+				$html = file_get_contents($this->href("",$motwiki));
+				preg_match('/<img src="(.*)"/U', $html, $matches);
+				$imagewiki=$matches[1];
+			}
+			
 			// On stocke les commentaires pour affichage dans les tooltips
-
+			
 			$link="<a href=\"#MAP_".$i."\">".$name.$comment."</a>";
+			
+			if ($imagewiki) {
+				$link="<img src=\"".$imagewiki."\"/><br>".$link;
+			}
 
 			// Commentaire deja présent ? : on ajoute à la suite
 			if ($text[$x.'|'.$y]) {
@@ -407,20 +426,6 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		$i++;
 	}
 
-	// Generation maparea + tooltips
-
-	foreach ($text as $coord => $maptext ) {
-		list($x,$y)=explode('|',$coord);
-		//imagearc($img, $x, $y, 10, 10, 0, 360, $green);
-		// Gd2, idealement il faudrait tester la disponibilite de la fonction et se rabbatre sur imagearc sinon
-		imagefilledellipse($img, $x, $y, $point_size, $point_size, $fill);
-		// pas de double quote dans le texte
-		$maptext=preg_replace("/'/", "\'", $maptext);
-		$maptext=preg_replace("/\"/", "\'", $maptext);
-		$usemap=$usemap."<area shape=\"circle\" alt=\"\" coords=\"".$x.",".$y.",5\" onmouseover=\"this.T_BGCOLOR='#E6FFFB';this.T_OFFSETX=2;this.T_OFFSETY=2;this.T_STICKY=1;return escape('".$maptext."')\" href=\"#\"/>";
-
-	}
-
 	// Ancienne version : pas de gestion de cache : on produit une image.
 
 	if ($this->page['latest']=='N') {
@@ -428,19 +433,95 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		imagejpeg($img, 'CACHE/'.$dest_map,95);
 		imagedestroy($img);
 	}
+
+ 	// Zoom : pas de gestion de cache : on produit une image.
+	
+	if ((isset($_POST['map_x']) || isset($_POST['map_y'])) && ($zoom_map)) {
+		
+		// Fichier double taille 
+		$filename = 'cartowiki/images/loupsat_double.jpg';
+	
+		// nouvelle dimension 
+		list($width, $height) = getimagesize($filename);
+		
+		$new_width=$width/2;
+		$new_height=$height/2;
+		
+		// recentrage
+		$map_x=$_POST['map_x']*2;
+		$map_y=$_POST['map_y']*2;
+			
+		$map_x = $map_x - ($new_width/2);
+		if (($map_x + $new_width)> $width) { $map_x = $width - $new_width;};
+		if ($map_x < 0) $map_x=0;
+		$map_y = $map_y - ($new_height/2);
+		if (($map_y + $new_height) > $height) { $map_y = $height- $new_height ;};
+		if ($map_y < 0) $map_y=0;
+		
+		// 	Resample
+		$image_p = imagecreatetruecolor($new_width, $new_height);  
+		$image = imagecreatefromjpeg($filename);
+	
+		imagecopyresampled($image_p, $image, 0, 0, $map_x, $map_y,  $new_width,$new_height, $new_width, $new_height);
+	
+		// Output
+	
+		$usemap='';
+		foreach ($text as $coord => $maptext ) {
+			list($x,$y)=explode('|',$coord);
+			$x=($x*2)-$map_x;
+			$y=($y*2)-$map_y;
+			//imagearc($img, $x, $y, 10, 10, 0, 360, $green);
+			// Gd2, idealement il faudrait tester la disponibilite de la fonction et se rabbatre sur imagearc sinon
+			imagefilledellipse($image_p, $x, $y, $point_size, $point_size, $fill);
+			// pas de double quote dans le texte
+			$maptext=preg_replace("/'/", "\'", $maptext);
+			$maptext=preg_replace("/\"/", "\'", $maptext);
+			$usemap=$usemap."<area shape=\"circle\" alt=\"\" coords=\"".$x.",".$y.",5\" onmouseover=\"this.T_BGCOLOR='#E6FFFB';this.T_OFFSETX=2;this.T_OFFSETY=2;this.T_STICKY=1;return escape('".$maptext."')\" href=\"#\"/>";
+	
+		}
+		
+		imageinterlace($image_p,1);
+		imagejpeg($image_p, 'CACHE/'.$dest_map,95);		
+		imagedestroy($image_p);
+		
+		echo "<form action=\"".$this->href()."\" method=\"post\">\n";
+ 		echo "<input border = \"0\" type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" "; 
+		echo "name=\"map\">";
+		echo "<map name=\"themap\" id=\"themap\">";
+		echo $usemap;
+		echo "</map>";
+		echo "</form>\n";
+		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
+	} 
  	
-
-    echo "<form action=\"".$this->href("","","refresh=1")."\" method=\"post\">\n";
- 	//echo "<input border = '0' type='image' src='\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"'";
- 	echo "<input border = \"0\" type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" "; 
-	echo "name=\"map\">";
-	echo "<map name=\"themap\" id=\"themap\">";
-	echo $usemap;
-	echo "</map>";
-	echo "</form>\n";
-
-
-	echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
+ 	else {
+ 		
+	
+		$usemap='';
+		foreach ($text as $coord => $maptext ) {
+			list($x,$y)=explode('|',$coord);
+			//imagearc($img, $x, $y, 10, 10, 0, 360, $green);
+			// Gd2, idealement il faudrait tester la disponibilite de la fonction et se rabbatre sur imagearc sinon
+			imagefilledellipse($img, $x, $y, $point_size, $point_size, $fill);
+			// pas de double quote dans le texte
+			$maptext=preg_replace("/'/", "\'", $maptext);
+			$maptext=preg_replace("/\"/", "\'", $maptext);
+			$usemap=$usemap."<area shape=\"circle\" alt=\"\" coords=\"".$x.",".$y.",5\" onmouseover=\"this.T_BGCOLOR='#E6FFFB';this.T_OFFSETX=2;this.T_OFFSETY=2;this.T_STICKY=1;return escape('".$maptext."')\" href=\"#\"/>";
+	
+		}
+ 		
+ 		
+	 	echo "<form action=\"".$this->href("","","refresh=1")."\" method=\"post\">\n";
+	 	echo "<input border = \"0\" type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" "; 
+		echo "name=\"map\">";
+		echo "<map name=\"themap\" id=\"themap\">";
+		echo $usemap;
+		echo "</map>";
+		echo "</form>\n";
+		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
+		
+ 	}
 
 }
 
@@ -450,6 +531,7 @@ else {
 	echo "</map>";
 }
 
+echo "<a href=\"".$this->Href()."&refresh=1\">*</a>";
 
 // Fin gestion du cache
 
@@ -457,32 +539,35 @@ else {
 // Utilisation pour la derniere page uniquement ou pour du refresh
 
 if (($this->page['latest']=='Y') || (($this->page['latest']=='Y') && isset($_REQUEST['refresh']) && $_REQUEST['refresh']==1)) {
-
-	echo "<a href=\"".$this->Href()."&refresh=1\">*</a>";
-
-	// Generation image cache
-
-    // Suppresion texte en cache
-    foreach(glob('CACHE/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
-           unlink($fn);
-    }
-    // Suppresion image en cache
-    foreach(glob('CACHE/'.$this->getPageTag().'*'.'.jpg') as $fn) {
-           unlink($fn);
-    }
-
-	imageinterlace($img,1);
-	imagejpeg($img, 'CACHE/'.$dest_map,95);
-	imagedestroy($img);
-
-	// Generation texte cache
-
-	$fp = fopen($cachefile, 'w');
-	$mapview_output = ob_get_contents();
-	fwrite($fp, $mapview_output);
-	fclose($fp);
-	ob_end_clean();
-	echo $mapview_output;
+	
+	if (!isset($_POST['map_x']) && !isset($_POST['map_y'])) {
+	
+//		echo "<a href=\"".$this->Href()."&refresh=1\">*</a>";
+	
+		// Generation image cache
+	
+	    // Suppresion texte en cache
+	    foreach(glob('CACHE/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
+	           unlink($fn);
+	    }
+	    // Suppresion image en cache
+	    foreach(glob('CACHE/'.$this->getPageTag().'*'.'.jpg') as $fn) {
+	           unlink($fn);
+	    }
+	
+		imageinterlace($img,1);
+		imagejpeg($img, 'CACHE/'.$dest_map,95);
+		imagedestroy($img);
+	
+		// Generation texte cache
+	
+		$fp = fopen($cachefile, 'w');
+		$mapview_output = ob_get_contents();
+		fwrite($fp, $mapview_output);
+		fclose($fp);
+		ob_end_clean();
+		echo $mapview_output;
+	}
 
 }
 
