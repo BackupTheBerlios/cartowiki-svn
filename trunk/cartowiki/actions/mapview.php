@@ -107,11 +107,7 @@ if ($centrage=='') {
 // Lecture commentaires embarqués dans la page
 
 $comment_jpeg=get_jpeg_Comment(get_jpeg_header_data('cartowiki/images/'.$src_map));
-
-
- 	
-
-
+	
 // Solution facile de lecture, mais difficile à maintenir : notamment la notation
 parse_str($comment_jpeg);
 
@@ -389,15 +385,20 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 				$comment=' : '.$comment;
 			}
 			
-			// Le commentaire commence par un mot Wiki ? On lit la premiere image de ce wiki
+			// Le commentaire commence par un lien forcé : On lit la premiere image de la page wiki
 			
 			$imagewiki='';
-			$motwiki='';
-			if (preg_match("/^[A-Z][a-z]+[A-Z,0-9][A-Z,a-z,0-9]*/s", $comment,$matches)) {
-				$motwiki=$matches[0];
-				$html = file_get_contents($this->href("",$motwiki));
-				preg_match('/<img src="(.*)"/U', $html, $matches);
-				$imagewiki=$matches[1];
+			$url='';
+			
+			if (preg_match("/.*\[\[(\S*)(\s+(.+))?\]\].*/U", $comment, $matches)) {
+				list (, $url, $texte_url) = $matches;
+				if ($url) {
+					$html = file_get_contents($this->href("",$url));
+					preg_match('/<img src="(.*)"/U', $html, $matches);
+					$imagewiki=$matches[1];
+				}
+				// nettoyage
+				$comment=preg_replace('/\[\[(.*)\]\]/', $texte_url, $comment);
 			}
 			
 			// On stocke les commentaires pour affichage dans les tooltips
@@ -405,7 +406,7 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 			$link="<a href=\"#MAP_".$i."\">".$name.$comment."</a>";
 			
 			if ($imagewiki) {
-				$link="<img src=\"".$imagewiki."\"/><br>".$link;
+				$link="<a href=\"".$this->href("",$url)."\"<img src=\"".$imagewiki."\"/><br>".$link;
 			}
 
 			// Commentaire deja présent ? : on ajoute à la suite
@@ -439,7 +440,7 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 	if ((isset($_POST['map_x']) || isset($_POST['map_y'])) && ($zoom_map)) {
 		
 		// Fichier double taille 
-		$filename = 'cartowiki/images/loupsat_double.jpg';
+		$zoom_map = $this->GetParameter('cartowiki/images/'.$zoommap);
 	
 		// nouvelle dimension 
 		list($width, $height) = getimagesize($filename);
@@ -485,11 +486,12 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		imagejpeg($image_p, 'CACHE/'.$dest_map,95);		
 		imagedestroy($image_p);
 				
-		echo "<map name=\"themap\" id=\"themap\">";
-		echo $usemap;
-		echo "</map>";
+		
 	 	//echo "<form action=\"".$this->href()."\" method=\"post\">\n";
 	 	echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+	 	echo "<map name=\"themap\" id=\"themap\">";
+		echo $usemap;
+		echo "</map>";
 	 	//echo "<input type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
 		//echo "name=\"map\"/>";
 		//echo "</form>\n";
@@ -511,15 +513,24 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 	
 		}
 		
+		
+		
+		//echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
+		echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
 		echo "<map name=\"themap\" id=\"themap\">";
 		echo $usemap;
 		echo "</map>";
+		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
+		
 	 	//echo "<form action=\"".$this->href("","","refresh=1")."\" method=\"post\">\n";
-	 	echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+	 	/*echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+		echo "<map name=\"themap\" id=\"themap\">";
+		echo $usemap;
+		echo "</map>";
 	 	//echo "<input type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
 		//echo "name=\"map\"/>";
-		//echo "</form>\n";
-		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
+		//echo "</form>\n";*/
+		
 
  	}
 
