@@ -2,8 +2,7 @@
 /*
 mapview.php
 
-Copyright 2005 David Delon, some piece of code are borrowed from "carto" by
-Yann le Guennec 2005, a project under "Licence Art Libre".
+Copyright 2005 David Delon, 
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -35,15 +34,14 @@ TODO : test centrage
 TODO : parametre de desactivation du cache
 TODO : revoir la notation des commentaires
 TODO : centrage point sur la maille optionnel
-TODO : retraiter le nom de l'image generer pour syntaxe correcte
 TODO : Gerer un peu mieux la suppression des anciennes version : risque de collision si nom de page
 debutant de la meme facon
+TODO : perf refresh sur zoom
 */
 
 // Forcage rafraichissement par adjonction de &refresh=1 à la requête :
 //
 include('conf/cartowiki.config.php');
-
 
 // Cache :
 // Utilisation la version en cours uniquement :
@@ -221,11 +219,16 @@ $p['30T']=($Px_echelle_X2['31T'] - $Px_echelle_X1['31T'] ) / ($M_UTM_X2['31T'] -
 
 unset($_SESSION['location']);
 
-if ($this->page['latest']=='N' || (( isset($_POST['map_x']) || isset($_POST['map_y'])) && $zoom_map)) {
+if ($this->page['latest']=='N') {
 	$dest_map = 'revision.'.$this->getPageTag().'.jpg';
 }
 else {
-	$dest_map = $this->getPageTag().ereg_replace('[: ]', '_', $this->page['time']).'.jpg';
+	if ((( isset($_GET['map_x']) || isset($_GET['map_y'])) && $zoom_map)) {
+		$dest_map = $this->getPageTag().ereg_replace('[: ]', '_', time()).'.jpg';
+	}
+	else {
+		$dest_map = $this->getPageTag().ereg_replace('[: ]', '_', $this->page['time']).'.jpg';
+	}
 }
 
 
@@ -406,7 +409,7 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 			$link="<a href=\"#MAP_".$i."\">".$name.$comment."</a>";
 			
 			if ($imagewiki) {
-				$link="<a href=\"".$this->href("",$url)."\"<img src=\"".$imagewiki."\"/><br>".$link;
+				$link="<a href=\"".$this->href("",$url)."\"><img src=\"".$imagewiki."\"/></a><br>".$link;
 			}
 
 			// Commentaire deja présent ? : on ajoute à la suite
@@ -427,7 +430,7 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		$i++;
 	}
 
-	// Ancienne version : pas de gestion de cache : on produit une image.
+	// Ancienne version (revision) : pas de gestion de cache : on produit une image.
 
 	if ($this->page['latest']=='N') {
 		imageinterlace($img,1);
@@ -437,10 +440,10 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 
  	// Zoom : pas de gestion de cache : on produit une image.
 	
-	if ((isset($_POST['map_x']) || isset($_POST['map_y'])) && ($zoom_map)) {
+	if ((isset($_GET['map_x']) || isset($_GET['map_y'])) && ($zoom_map)) {
 		
 		// Fichier double taille 
-		$zoom_map = $this->GetParameter('cartowiki/images/'.$zoommap);
+		$filename = 'cartowiki/images/'.$zoom_map;
 	
 		// nouvelle dimension 
 		list($width, $height) = getimagesize($filename);
@@ -449,8 +452,8 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		$new_height=$height/2;
 		
 		// recentrage
-		$map_x=$_POST['map_x']*2;
-		$map_y=$_POST['map_y']*2;
+		$map_x=$_GET['map_x']*2;
+		$map_y=$_GET['map_y']*2;
 			
 		$map_x = $map_x - ($new_width/2);
 		if (($map_x + $new_width)> $width) { $map_x = $width - $new_width;};
@@ -486,15 +489,12 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		imagejpeg($image_p, 'CACHE/'.$dest_map,95);		
 		imagedestroy($image_p);
 				
-		
-	 	//echo "<form action=\"".$this->href()."\" method=\"post\">\n";
-	 	echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+		echo "<div style=\"position:relative;\">";		
+	 	echo "<img  onclick=\"MapViewClic(event);\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
+	 	echo "</div>";
 	 	echo "<map name=\"themap\" id=\"themap\">";
 		echo $usemap;
 		echo "</map>";
-	 	//echo "<input type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
-		//echo "name=\"map\"/>";
-		//echo "</form>\n";
 		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
 		
 	} 
@@ -503,8 +503,6 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		$usemap='';
 		foreach ($text as $coord => $maptext ) {
 			list($x,$y)=explode('|',$coord);
-			//imagearc($img, $x, $y, 10, 10, 0, 360, $green);
-			// Gd2, idealement il faudrait tester la disponibilite de la fonction et se rabbatre sur imagearc sinon
 			imagefilledellipse($img, $x, $y, $point_size, $point_size, $fill);
 			// pas de double quote dans le texte
 			$maptext=preg_replace("/'/", "\'", $maptext);
@@ -515,26 +513,95 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		
 		
 		
-		//echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
-		echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
+		
+		
+		echo "<div style=\"position:relative;\">";
+		echo "<img onclick=\"MapViewClic(event);\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
+		echo "</div>";
 		echo "<map name=\"themap\" id=\"themap\">";
 		echo $usemap;
 		echo "</map>";
 		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
-		
-	 	//echo "<form action=\"".$this->href("","","refresh=1")."\" method=\"post\">\n";
-	 	/*echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
-		echo "<map name=\"themap\" id=\"themap\">";
-		echo $usemap;
-		echo "</map>";
-	 	//echo "<input type=\"image\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
-		//echo "name=\"map\"/>";
-		//echo "</form>\n";*/
-		
-
+						
  	}
-
+ 	
+ 		
+		// Ce javascript est present ici , surtout pour la facilite d'ecriture que represente la 
+		// possibilité de modifier le code generé par l'action en cours.
+		// TODO : passer coordonnee en utm !
+		// TODO : ne pas passer par des refresh en mode zoom
+	?> 
+			<script language="Javascript" type="text/javascript">
+			function findPosX(obj)
+			{
+			  var curleft = 0;
+			  if (obj.offsetParent)
+			  {
+			    while (obj.offsetParent)
+			    {
+			      curleft += obj.offsetLeft
+			      obj = obj.offsetParent;
+			    }
+			  }
+			  else if (obj.x)
+			    curleft += obj.x;
+			  return curleft;
+			}
+			function findPosY(obj)
+			{
+			  var curtop = 0;
+			  if (obj.offsetParent)
+			  {
+			    while (obj.offsetParent)
+			    {
+			      curtop += obj.offsetTop
+			      obj = obj.offsetParent;
+			    }
+				 }
+				 else if (obj.y)
+				   curtop += obj.y;
+				 return curtop;
+			}
+			function MapViewClic (event)
+			{
+			  var targ;
+			  var x;
+			  var y;
+			  if (!event) var event = window.event;
+			  if (event.target) targ = event.target;
+			  else if (event.srcElement) targ = event.srcElement;
+			  if (targ.nodeType == 3) // defeat Safari bug
+			    targ = targ.parentNode;
+			  var posx = 0;
+			  var posy = 0;
+			  if (!event) var event = window.event;
+			  if (event.pageX || event.pageY)
+			  {
+			    posx = event.pageX;
+			    posy = event.pageY;
+			  }
+			  else if (event.clientX || event.clientY)
+			  {
+			    posx = event.clientX + document.body.scrollLeft;
+			    posy = event.clientY + document.body.scrollTop;
+			  }
+			  x = posx - findPosX (targ);
+			  y = posy - findPosY (targ);
+	 <?php
+	 if ((isset($_GET['map_x']) || isset($_GET['map_y'])) && ($zoom_map)) {
+		echo "window.location.assign ('".$this->href()."&refresh=1')";
+	 }
+	 else {
+	 	echo "window.location.assign ('".$this->href()."&refresh=1&map_x='+x+'&map_y='+y)";
+	 }
+	 ?>
+			}
+			</script>
+	 <?php	
+ 	
 }
+
+
 
 // Affichage image origine
 else {
@@ -552,7 +619,7 @@ echo "<a href=\"".$this->Href()."&refresh=1\">*</a>";
 
 if (($this->page['latest']=='Y') || (($this->page['latest']=='Y') && isset($_REQUEST['refresh']) && $_REQUEST['refresh']==1)) {
 	
-	if (!isset($_POST['map_x']) && !isset($_POST['map_y'])) {
+	if (!isset($_GET['map_x']) && !isset($_GET['map_y'])) {
 	
 //		echo "<a href=\"".$this->Href()."&refresh=1\">*</a>";
 	
