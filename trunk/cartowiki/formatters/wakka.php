@@ -34,9 +34,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 if (!function_exists("wakka2callback"))
 {
+	@include("formatters/tableaux.php");     //EF => tableaux
 	function wakka2callback($things)
 	{
-		@include("formatters/tableaux.php");     //EF => tableaux
+		
 		
 		$thing = $things[1];
         $result='';

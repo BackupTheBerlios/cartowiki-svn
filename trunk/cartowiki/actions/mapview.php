@@ -43,6 +43,27 @@ TODO : perf refresh sur zoom
 //
 include('conf/cartowiki.config.php');
 
+
+// TODO : revoir cette partie (teste ...)
+// Mise à jour contenu a la volee si coordonnée utm passé en parametre et texte dans le post :
+
+if ((isset($_GET['utm_x']) || isset($_GET['utm_y']) )) {
+
+  if ($_POST['submit']=='OK') {
+  	$chaine="\n~~\"\"<!--".$_GET['utm_x']."-".$_GET['utm_y']."-31 -->\"\"[".$_POST['texte_utm']."]~~";
+  	$this->page['body']=$this->page['body'].$chaine;
+  	$this->SavePage($this->getPageTag(),$this->page['body']);
+  }
+  if (isset($_GET['map_x']) || isset($_GET['map_y'])) { 
+	$this->Redirect($this->Href()."&refresh=1&map_x=".$_GET['map_x']."&map_y=".$_GET['map_y']);
+  }
+  else
+  {
+  	$this->Redirect($this->Href()."&refresh=1");
+  }
+}
+
+
 // Cache :
 // Utilisation la version en cours uniquement :
 // Si present : affichage
@@ -219,6 +240,8 @@ $p['30T']=($Px_echelle_X2['31T'] - $Px_echelle_X1['31T'] ) / ($M_UTM_X2['31T'] -
 
 unset($_SESSION['location']);
 
+// Nom du fichier image en sortie
+
 if ($this->page['latest']=='N') {
 	$dest_map = 'revision.'.$this->getPageTag().'.jpg';
 }
@@ -251,6 +274,9 @@ switch ($couleur) {
 		   $fill = imagecolorallocate($img, 0, 255, 0);
 }
 
+if (isset($_GET['ecrit'])) {
+	print "hh";	
+}
 echo "<a name=\"topmap\"></a>";
 
 // Lecture des localités :
@@ -430,7 +456,8 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		$i++;
 	}
 
-	// Ancienne version (revision) : pas de gestion de cache : on produit une image.
+	
+	// revision : pas de gestion de cache : on produit une image.
 
 	if ($this->page['latest']=='N') {
 		imageinterlace($img,1);
@@ -488,14 +515,45 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		imageinterlace($image_p,1);
 		imagejpeg($image_p, 'CACHE/'.$dest_map,95);		
 		imagedestroy($image_p);
+		
+			?>
+	<form id='form_xy' onsubmit='return false'>
+		<table>
+			<tr>
+			<td><input type="radio" name="outil" value="zoom"   id="zoom" onclick="changeOutil()" />zoom avant/arrière<br/></td>
+          	<td><input type="radio" name="outil" value="point"  id="point" onclick="changeOutil()" />saisie d'un point<br/></td>
+			</tr>
+		</table>
+	<?php		
+		
+		
 				
-		echo "<div style=\"position:relative;\">";		
-	 	echo "<img  onclick=\"MapViewClic(event);\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
-	 	echo "</div>";
+		echo "<div id =\"cartowikimap\" style=\"position:relative;\">";
+	 	echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\" ";
 	 	echo "<map name=\"themap\" id=\"themap\">";
 		echo $usemap;
 		echo "</map>";
-		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
+		
+	?>
+		<table>	
+		<tr>
+			<td><input type='text' class='txt' id='x'></td>
+			<td><input type='text' class='txt' id='y'></td>
+			<td><input type='text' class='txt' id='x_utm'></td>
+			<td><input type='text' class='txt' id='y_utm'></td>
+			<td><input type='hidden' class='txt' id='valeur_outil'></td>
+		<tr>
+		</table>
+	</form>
+	
+	<?php
+		echo "</div>";
+		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"cartowiki/bib/tooltip/wz_tooltip.js\"></script>";
+		echo "<script type=\"text/javascript\" src=\"cartowiki/bib/x/x_core.js\"></script>";
+		echo "<script type=\"text/javascript\" src=\"cartowiki/bib/x/x_event.js\"></script>";
+		echo "<script type=\"text/javascript\" src=\"cartowiki/bib/domtt/domLib.js\"></script>";
+		echo "<script type=\"text/javascript\" src=\"cartowiki/bib/domtt/domTT.js\"></script>";
+		
 		
 	} 
  	
@@ -510,94 +568,197 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 			$usemap=$usemap."<area shape=\"circle\" alt=\"\" coords=\"".$x.",".$y.",5\" onmouseover=\"this.T_BGCOLOR='#E6FFFB';this.T_OFFSETX=2;this.T_OFFSETY=2;this.T_STICKY=1;return escape('".$maptext."')\" href=\"#\"/>";
 	
 		}
+		if ($zoom_map!="") {
+		?>
+	<form id='form_xy' onsubmit='return false'>
+		<table>
+			<tr>
+			<td><input type="radio" name="outil" value="zoom"   id="zoom" onclick="changeOutil()" />zoom avant/arrière<br/></td>
+          	<td><input type="radio" name="outil" value="point"  id="point" onclick="changeOutil()" />saisie d'un point<br/></td>
+			</tr>
+		</table>
+	<?php		
+		}
 		
-		
-		
-		
-		
-		echo "<div style=\"position:relative;\">";
-		echo "<img onclick=\"MapViewClic(event);\" src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
-		echo "</div>";
+		echo "<div id =\"cartowikimap\" style=\"position:relative;\">";
+		echo "<img src=\"".('CACHE/'.$dest_map)."\" style=\"border:none; cursor:crosshair\" alt=\"\" usemap=\"#themap\"></img><br />\n";
 		echo "<map name=\"themap\" id=\"themap\">";
 		echo $usemap;
 		echo "</map>";
-		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"".'cartowiki/bib/tooltip/'."wz_tooltip.js\"></script>";
+		echo "</div>";
+				
+	?>
+		<table>	
+		<tr>
+			<td><input type='text' class='txt' id='x'></td>
+			<td><input type='text' class='txt' id='y'></td>
+			<td><input type='text' class='txt' id='x_utm'></td>
+			<td><input type='text' class='txt' id='y_utm'></td>
+			<td><input type='hidden' class='txt' id='valeur_outil'></td>
+		<tr>
+		</table>
+
+	</form>
+	
+	<?php
+		
+		echo "<script language=\"JavaScript\" type=\"text/javascript\" src=\"cartowiki/bib/tooltip/wz_tooltip.js\"></script>";
+		echo "<script type=\"text/javascript\" src=\"cartowiki/bib/x/x_core.js\"></script>";
+		echo "<script type=\"text/javascript\" src=\"cartowiki/bib/x/x_event.js\"></script>";
+		echo "<script type=\"text/javascript\" src=\"cartowiki/bib/domtt/domLib.js\"></script>";
+		echo "<script type=\"text/javascript\" src=\"cartowiki/bib/domtt/domTT.js\"></script>";
+		
 						
  	}
- 	
- 		
-		// Ce javascript est present ici , surtout pour la facilite d'ecriture que represente la 
-		// possibilité de modifier le code generé par l'action en cours.
-		// TODO : passer coordonnee en utm !
-		// TODO : ne pas passer par des refresh en mode zoom
-	?> 
-			<script language="Javascript" type="text/javascript">
-			function findPosX(obj)
-			{
-			  var curleft = 0;
-			  if (obj.offsetParent)
-			  {
-			    while (obj.offsetParent)
-			    {
-			      curleft += obj.offsetLeft
-			      obj = obj.offsetParent;
-			    }
-			  }
-			  else if (obj.x)
-			    curleft += obj.x;
-			  return curleft;
-			}
-			function findPosY(obj)
-			{
-			  var curtop = 0;
-			  if (obj.offsetParent)
-			  {
-			    while (obj.offsetParent)
-			    {
-			      curtop += obj.offsetTop
-			      obj = obj.offsetParent;
-			    }
-				 }
-				 else if (obj.y)
-				   curtop += obj.y;
-				 return curtop;
-			}
-			function MapViewClic (event)
-			{
-			  var targ;
-			  var x;
-			  var y;
-			  if (!event) var event = window.event;
-			  if (event.target) targ = event.target;
-			  else if (event.srcElement) targ = event.srcElement;
-			  if (targ.nodeType == 3) // defeat Safari bug
-			    targ = targ.parentNode;
-			  var posx = 0;
-			  var posy = 0;
-			  if (!event) var event = window.event;
-			  if (event.pageX || event.pageY)
-			  {
-			    posx = event.pageX;
-			    posy = event.pageY;
-			  }
-			  else if (event.clientX || event.clientY)
-			  {
-			    posx = event.clientX + document.body.scrollLeft;
-			    posy = event.clientY + document.body.scrollTop;
-			  }
-			  x = posx - findPosX (targ);
-			  y = posy - findPosY (targ);
-	 <?php
-	 if ((isset($_GET['map_x']) || isset($_GET['map_y'])) && ($zoom_map)) {
-		echo "window.location.assign ('".$this->href()."&refresh=1')";
-	 }
-	 else {
-	 	echo "window.location.assign ('".$this->href()."&refresh=1&map_x='+x+'&map_y='+y)";
-	 }
-	 ?>
-			}
-			</script>
-	 <?php	
+
+	?>
+
+<script type="text/javascript">
+
+
+window.onload = function()
+{
+
+   var outil = xGetElementById('form_xy').elements;   
+   if (get_cookie('outil')!="") {
+   		outil['valeur_outil'].value = get_cookie('outil');
+   		outil[get_cookie('outil')].checked = true;
+   }
+   else {
+   		outil['valeur_outil'].value = 'zoom';
+   		outil['zoom'].checked = true;
+		setoutil('zoom');
+   }
+   if (window.winOnLoad) window.winOnLoad();
+
+}
+
+window.onunload = function()
+{
+    if (window.winOnUnload) window.winOnUnload();
+}
+
+function get_cookie(Name) {
+	var search = Name + "="
+	var returnvalue = "";
+	if (document.cookie.length > 0) {
+		offset = document.cookie.indexOf(search)
+		// if cookie exists
+		if (offset != -1) {
+			offset += search.length
+			// set index of beginning of value
+			end = document.cookie.indexOf(";", offset);
+			// set index of end of cookie value
+			if (end == -1) end = document.cookie.length;
+			returnvalue=unescape(document.cookie.substring(offset, end))
+		}
+	}
+	return returnvalue;
+}
+
+function setoutil(outil_selectionne){
+	document.cookie="outil="+outil_selectionne;
+}
+
+
+function changeOutil() {
+	var outil = xGetElementById('form_xy').elements;
+	if (outil['point'].checked) {
+		outil['valeur_outil'].value = 'point';
+		setoutil('point');
+	}
+	else {
+		outil['valeur_outil'].value = 'zoom';
+		setoutil('zoom');
+	}
+}
+
+
+function winOnLoad()
+{
+  xAddEventListener('cartowikimap', 'mousemove', onMousemove, false);
+  xAddEventListener('cartowikimap', 'click', onMouseclick, false);
+  
+}
+function onMousemove(evt)
+{
+  var e = new xEvent(evt);
+  var fe = xGetElementById('form_xy').elements;
+  <?php
+  // Normal
+  	if (!isset($_GET['map_x']) && !isset($_GET['map_y'])) {
+  		echo "x_utm = ((e.offsetX - ".$Px_echelle_X1['31T'].") / ".$p['31T'].") + ".$M_UTM_X1['31T'].";";
+   		echo "y_utm = ((e.offsetY - ".$Px_echelle_Y2['31T'].") / -".$p['31T'].") + ".$M_UTM_Y1['31T'].";";
+  	}
+  // Zoom in (correction coordonnees)
+  	else {
+  		echo "x_utm = ((((e.offsetX + ".$map_x.")/2) - ".$Px_echelle_X1['31T'].") / ".$p['31T'].") + ".$M_UTM_X1['31T'].";";
+   		echo "y_utm = ((((e.offsetY + ".$map_y.")/2) - ".$Px_echelle_Y2['31T'].") / -".$p['31T'].") + ".$M_UTM_Y1['31T'].";";
+  	}
+  ?>
+  fe['x'].value = e.offsetX;
+  fe['x_utm'].value = Math.round(x_utm);
+  fe['y'].value = e.offsetY;
+  fe['y_utm'].value = Math.round(y_utm);
+  return true;
+}
+
+function onMouseclick(evt)
+{
+  var e = new xEvent(evt);
+  var fe = xGetElementById('form_xy').elements;
+  <?php
+    // Normal
+  	if (!isset($_GET['map_x']) && !isset($_GET['map_y'])) {
+  		echo "x_utm = ((e.offsetX - ".$Px_echelle_X1['31T'].") / ".$p['31T'].") + ".$M_UTM_X1['31T'].";";
+   		echo "y_utm = ((e.offsetY - ".$Px_echelle_Y2['31T'].") / -".$p['31T'].") + ".$M_UTM_Y1['31T'].";";
+  	}
+  	// Zoom in (correction coordonnees)
+  	else {
+  		echo "x_utm = ((((e.offsetX + ".$map_x.")/2) - ".$Px_echelle_X1['31T'].") / ".$p['31T'].") + ".$M_UTM_X1['31T'].";";
+   		echo "y_utm = ((((e.offsetY + ".$map_y.")/2) - ".$Px_echelle_Y2['31T'].") / -".$p['31T'].") + ".$M_UTM_Y1['31T'].";";
+  	}   	
+  ?>
+  fe['x'].value = e.offsetX;
+  x_utm=Math.round(x_utm);
+  fe['x_utm'].value = x_utm;
+  fe['y'].value = e.offsetY;
+  y_utm=Math.round(y_utm);
+  fe['y_utm'].value = y_utm;
+  if (fe['point'].checked)  {
+  <?php
+  		if (!isset($_GET['map_x']) && !isset($_GET['map_y'])) {
+			echo "domTT_activate(this, evt, 'content', '<form method=\"post\" action=\"".$this->href()."&refresh=1&utm_x='+x_utm+'&utm_y='+y_utm+'\"><div style=\"background-color:white;\"><table><tr><td>Description :</td></tr><tr><td><input type=\"text\" name=\"texte_utm\"></td><td><input type=\"submit\" name=\"submit\" value=\"OK\"><input type=\"submit\" name=\"cancel\" value=\"Annuler\"></td></tr></table></form></div>', 'type', 'sticky' );";
+  		}
+  		else {
+  			echo "domTT_activate(this, evt, 'content', '<form method=\"post\" action=\"".$this->href()."&refresh=1&utm_x='+x_utm+'&utm_y='+y_utm+'&map_x='+".$_GET['map_x']."+'&map_y='+".$_GET['map_y']."+'\"><div style=\"background-color:white;\"><table><tr><td>Description :</td></tr><tr><td><input type=\"text\" name=\"texte_utm\"></td><td><input type=\"submit\" name=\"submit\" value=\"OK\"><input type=\"submit\" name=\"cancel\" value=\"Annuler\"></td></tr></table></form></div>', 'type', 'sticky' );";
+  		}
+  		
+	// }
+  ?>
+  }
+  else {
+  <?php
+	 	// Zoom-out
+	 	 if ((isset($_GET['map_x']) || isset($_GET['map_y'])) && ($zoom_map)) {
+			echo "window.location.assign ('".$this->href()."&refresh=1')";
+	  	}
+	  	// Zoom-in
+	 	else {
+	 	 	echo "window.location.assign ('".$this->href()."&refresh=1&map_x='+e.offsetX+'&map_y='+e.offsetY);";
+	 	}
+	 	//echo "domTT_activate(this, evt, 'content', '<form method=\"post\" action=\"".$this->href()."&refresh=1&utm_x='+x_utm+'&utm_y='+y_utm+'\"><div style=\"background-color:white;\"><table><tr><td>Description :</td></tr><tr><td><input type=\"text\" name=\"texte_utm\"></td><td><input type=\"submit\" name=\"submit\" value=\"OK\"></td></tr></table></form></div>', 'type', 'sticky' )";
+	 //}
+	 
+  ?>
+  }
+  return true;
+}
+</script>
+
+
+
+	<?php
  	
 }
 
