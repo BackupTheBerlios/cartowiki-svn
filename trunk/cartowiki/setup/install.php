@@ -293,6 +293,7 @@ case "0":
 			$erreur = testerConfig( $sortie_verif, 'Insertion table '.$table_nom.'...', @mysql_query($value['query'], $dblink),
 						'Données déjà présente ?', 0, $erreur);
 		    }
+		}
 		break;
 }
 
