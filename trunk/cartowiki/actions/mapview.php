@@ -43,6 +43,10 @@ TODO : perf refresh sur zoom
 //
 include('conf/cartowiki.config.php');
 
+// Initialisation
+// TODO : revoir la gestion de l'affichage des communes non trouvées
+
+unset($_SESSION['location']);
 
 // TODO : revoir cette partie (teste ...)
 // Mise à jour contenu a la volee si coordonnée utm passé en parametre et texte dans le post :
@@ -69,7 +73,7 @@ if ((isset($_GET['utm_x']) || isset($_GET['utm_y']) )) {
 // Si present : affichage
 // Si absent : passage en mode buffer pour ecriture en fin de programme
 
-$cachefile = 'CACHE/'.$this->getPageTag().ereg_replace('[: ]', '_', $this->page['time']).'.cache.txt';
+$cachefile = 'CACHE/'.$this->getPageTag().ereg_replace('[: ]', '_', $this->page['time']).$this->getPageTag().'.cache.txt';
 if (($this->page['latest']=='Y')) {
 	if ((!isset($_REQUEST['refresh']) || $_REQUEST['refresh']!=1)) {
 		if (file_exists($cachefile) ) {
@@ -236,10 +240,6 @@ $M_UTM_Y1['30T']=$Y130TUTM;
 $p['30T']=($Px_echelle_X2['31T'] - $Px_echelle_X1['31T'] ) / ($M_UTM_X2['31T'] - $M_UTM_X1['31T']);
 
 
-// Initialisation
-
-unset($_SESSION['location']);
-
 // Nom du fichier image en sortie
 
 if ($this->page['latest']=='N') {
@@ -247,10 +247,10 @@ if ($this->page['latest']=='N') {
 }
 else {
 	if ((( isset($_GET['map_x']) || isset($_GET['map_y'])) && $zoom_map)) {
-		$dest_map = $this->getPageTag().ereg_replace('[: ]', '_', time()).'.jpg';
+		$dest_map = $this->getPageTag().ereg_replace('[: ]', '_', time()).$this->getPageTag().'.jpg';
 	}
 	else {
-		$dest_map = $this->getPageTag().ereg_replace('[: ]', '_', $this->page['time']).'.jpg';
+		$dest_map = $this->getPageTag().ereg_replace('[: ]', '_', $this->page['time']).$this->getPageTag().'.jpg';
 	}
 }
 
@@ -336,14 +336,14 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 				$utm=$this->LoadSingle("select * from locations where soundex(name) = soundex('".mysql_escape_string($name)."') limit 1");
 				 //on stocke ce qu'on a trouver avec le  soundex    pour l'afficher
 				if ($utm) {
-					$_SESSION['location'] [$i]='AF';
-					$_SESSION['location_message'] [$i]=$utm['name'].' '.$utm['code'];
+					$_SESSION['location'][$this->GetPageTag()] [$i]='AF';
+					$_SESSION['location_message'][$this->GetPageTag()][$i]=$utm['name'].' '.$utm['code'];
 				}
 			}
 			else {
-				// on stocke ce qu'on a trouver sans le departement pour l'afficher
-				$_SESSION['location'] [$i]='AF';
-				$_SESSION['location_message'] [$i]=$utm['name'].' '.$utm['code'];
+				// on stocke ce qu'on a trouve sans le departement pour l'afficher
+				$_SESSION['location'][$this->GetPageTag()] [$i]='AF';
+				$_SESSION['location_message'][$this->GetPageTag()] [$i]=$utm['name'].' '.$utm['code'];
 			}
 		}
 
@@ -451,7 +451,7 @@ if (preg_match_all('/~~(.*)~~/',$this->page['body'],$locations)){
 		// Pas trouvé : on stocke la ligne en session pour transmission au formatter qui affichera le message d'erreur.
 
 		else {
-			$_SESSION['location'] [$i]='NF';
+			$_SESSION['location'][$this->GetPageTag()] [$i]='NF';
 		}
 		$i++;
 	}
@@ -787,11 +787,11 @@ if (($this->page['latest']=='Y') || (($this->page['latest']=='Y') && isset($_REQ
 		// Generation image cache
 	
 	    // Suppresion texte en cache
-	    foreach(glob('CACHE/'.$this->getPageTag().'*'.'.cache.txt') as $fn) {
+	    foreach(glob('CACHE/'.$this->getPageTag().'*'.$this->getPageTag().'.cache.txt') as $fn) {
 	           unlink($fn);
 	    }
 	    // Suppresion image en cache
-	    foreach(glob('CACHE/'.$this->getPageTag().'*'.'.jpg') as $fn) {
+	    foreach(glob('CACHE/'.$this->getPageTag().'*'.$this->getPageTag().'.jpg') as $fn) {
 	           unlink($fn);
 	    }
 	

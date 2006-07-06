@@ -91,11 +91,13 @@ if (!function_exists("wakka2callback"))
 			static $carto = 0;
 			static $cartocpt = 0;
 			($carto % 2 ? $cartocpt++ : "");
-			if ($_SESSION['location'][$cartocpt]=='NF') {
+			if ($_SESSION['location'][$wiki->GetPageTag()][$cartocpt]=='NF') {
+//			if ($_SESSION['location'][$cartocpt]=='NF') {
 				$msg ="(Localit&eacute; non r&eacute;f&eacute;renc&eacute;e)";
 			}
-			if ($_SESSION['location'][$cartocpt]=='AF') {
-				$msg ="Résultat approch&eacute; : ".$_SESSION['location_message'][$cartocpt]." ";
+			if ($_SESSION['location'][$wiki->GetPageTag()][$cartocpt]=='AF') {
+//			if ($_SESSION['location'][$cartocpt]=='AF') {
+				$msg ="Résultat approch&eacute; : ".$_SESSION['location_message'][$wiki->GetPageTag()][$cartocpt]." ";
 			}
 			
 		 	return (++$carto % 2 ? "<a name=\"MAP_".$cartocpt."\">".$msg."</a>" : " <a href=\"#topmap\">(Carte)</a>");
